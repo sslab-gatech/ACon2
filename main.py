@@ -6,6 +6,8 @@ import data
 import utils
 import models
 
+import numpy as np
+
 def parse_args():
     ## init a parser
     parser = argparse.ArgumentParser(description='online learning')
@@ -24,7 +26,7 @@ def parse_args():
 
     ## model args
     parser.add_argument('--model_base.name', type=str, default='KF1D')
-    parser.add_argument('--model_ps.name', type=str, default='EWA1D')
+    parser.add_argument('--model_ps.name', type=str, default='RCI') # EWA1D, RCI
     parser.add_argument('--model_ps.threshold_min', type=float, default=0.0)
     parser.add_argument('--model_ps.threshold_max', type=float, default=10.0)
     parser.add_argument('--model_ps.threshold_step', type=float, default=0.0001)
@@ -35,10 +37,10 @@ def parse_args():
     ## training algorithm args
     parser.add_argument('--train.method', type=str, default='skip')
     
-    ## calibration algorithm args
-    parser.add_argument('--cal.method', type=str, default='EWA')
-    parser.add_argument('--cal.alpha', type=float, default=0.1)
-    parser.add_argument('--cal.rerun', action='store_true')
+    # ## calibration algorithm args
+    # parser.add_argument('--cal.method', type=str, default='EWA')
+    # parser.add_argument('--cal.alpha', type=float, default=0.1)
+    # parser.add_argument('--cal.rerun', action='store_true')
     
 
     args = parser.parse_args()
@@ -64,6 +66,7 @@ def run(args):
     ds = getattr(data, args.data.name)(args.data.path)
     
     ## load a base model
+    #model_base = getattr(models, args.model_base.name)(state_noise_init=np.log(10), obs_noise_init=np.log(10))
     model_base = getattr(models, args.model_base.name)()
 
     ## load a prediction set
@@ -71,24 +74,37 @@ def run(args):
 
     ## prediction
     n_err = 0
-    for t, (time, obs) in enumerate(ds.seq, 1):
-        obs = obs.unsqueeze(0)
-
-        # measure the performance
-        n_err += model_ps.error(obs)
-        ps = model_ps.predict()
-
-        # update thresholds        
-        model_ps.update(obs)
-
-        # update the KF state
-        state_est = model_ps.base(obs)
+    results = []
+    results_fn = os.path.join(args.output_root, args.exp_name, '_'.join(args.data.path.split('/')[1:]), args.model_ps.name, 'results.pk')
+    
+    
+    for t, (timestamp, obs) in enumerate(ds.seq):
         
-        print(f"[step = {time.item()}] obs = {obs.item()}, mu = {state_est['mu'].item():.2f}, cov = {state_est['cov'].item():.4f}, "\
-              f"threshold = {model_ps.threshold:.4f}, interval = [{ps[0]:.2f}, {ps[1]:.2f}], length = {ps[1] - ps[0]:.2f}, error = {n_err / t}")
+        time = np.array(timestamp.item()).astype('datetime64[s]')
+        obs = obs.unsqueeze(0)
+        if t == 0:
+            model_ps.base.init_state(obs)
+        else:
+            # measure the performance
+            n_err += model_ps.error(obs)
+            ps = model_ps.predict()
 
-        if t >= args.model_ps.T:
-            break
+            # update thresholds        
+            model_ps.update(obs)
+
+            # update the KF state
+            state_est = model_ps.base(obs)
+
+            print(f"[time = {time}] obs = {obs.item()}, mu = {state_est['mu'].item():.2f}, cov = {state_est['cov'].item():.4f}, "\
+                  f"threshold = {model_ps.threshold:.4f}, interval = [{ps[0]:.2f}, {ps[1]:.2f}], length = {ps[1] - ps[0]:.2f}, error = {n_err / t}")
+
+            results.append({'time': time, 'obs': obs, 'pred_set': ps, 'error': n_err / t})
+            if t >= args.model_ps.T:
+                break
+
+    os.makedirs(os.path.dirname(results_fn), exist_ok=True)
+    import pickle
+    pickle.dump({'predictions': results, 'args': args}, open(results_fn, 'wb'))
         
 if __name__ == '__main__':
     args = parse_args()

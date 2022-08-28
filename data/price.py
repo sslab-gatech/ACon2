@@ -15,8 +15,7 @@ class PriceDataset:
         
     def __getitem__(self, index):
         time, price = self.data[index]['time'], self.data[index]['price']
-        #TODO return time
-        return index, price
+        return time.astype('datetime64[s]').astype('int'), price
 
 
     def __len__(self):
