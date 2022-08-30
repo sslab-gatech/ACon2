@@ -24,10 +24,14 @@ class KF1D(tc.nn.Module):
         self.obs_model = tc.tensor([[1.0]])
 
         self.opt = tc.optim.SGD([self.state_noise, self.obs_noise], lr=lr)
-        
 
+
+    def encode(self, obs):
+        return tc.ones(self.dim, self.dim)*obs
+    
+        
     def init_state(self, obs):
-        self.state_mu = obs
+        self.state_mu = self.encode(obs)
         self.state_cov = tc.ones(self.dim, self.dim)
         
         
@@ -38,6 +42,7 @@ class KF1D(tc.nn.Module):
     
 
     def update(self, state_pred, obs):
+        obs = self.encode(obs)
         assert(obs.shape == tc.Size([self.dim, self.dim]))
 
         state_mu_pred, state_cov_pred = state_pred['mu'], state_pred['cov']
@@ -72,6 +77,7 @@ class KF1D(tc.nn.Module):
 
     
     def score(self, obs):
+        obs = self.encode(obs)
         # score on the predicted state
         state_pred = self.predict()
         score = norm.pdf(obs.item(), loc=state_pred['mu'].item(), scale=state_pred['cov'].sqrt().item())
@@ -83,6 +89,7 @@ class KF1D(tc.nn.Module):
         state_pred = self.predict()
         if hasattr(t, 'item'):
             t = t.item()
+        t = max(1e-9, t) # avoid numerical error
         mu = state_pred['mu'].item()
         sig = state_pred['cov'].sqrt().item()
         c = - 2 * np.log(t) - 2 * np.log(sig) - np.log(2*np.pi)

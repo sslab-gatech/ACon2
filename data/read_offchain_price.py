@@ -148,7 +148,7 @@ def get_from_binance(pair0, pair1, time_start=None, time_end=None, time_step_sec
         data_req_ftr = []
         price = data['close']
         for i in range(len(data)):
-            data_req_ftr.append({'time': data.index.values[i], 'price': price[i]})
+            data_req_ftr.append({'time': data.index.values[i], 'price': float(price[i])})
         return data_req_ftr
         
     def request(t_start, t_end, time_step_sec):

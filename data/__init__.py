@@ -1,1 +1,1 @@
-from data.price import Price
+from data.price import PriceDataset
