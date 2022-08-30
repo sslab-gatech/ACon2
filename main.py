@@ -19,7 +19,8 @@ def parse_args():
 
     ## data args
     parser.add_argument('--data.name', type=str, default='Price')
-    parser.add_argument('--data.path', type=str, default='data/price_ETH_USD/coinbase')    
+    parser.add_argument('--data.path', type=str, nargs='+', default=['data/price_ETH_USD/coinbase'])    
+    #parser.add_argument('--data.path', type=str, default='data/price_ETH_USD/coinbase')    
     parser.add_argument('--data.batch_size', type=int, default=1)
     parser.add_argument('--data.n_workers', type=int, default=0)
     parser.add_argument('--data.seed', type=lambda v: None if v=='None' else int(v), default=0)
@@ -58,6 +59,53 @@ def parse_args():
     utils.print_args(args)
     
     return args    
+
+
+def run1(args):
+
+    ## load a dataset
+    ds = getattr(data, args.data.name)(args.data.path)
+    
+    ## load a base model
+    #model_base = getattr(models, args.model_base.name)(state_noise_init=np.log(10), obs_noise_init=np.log(10))
+    model_base = getattr(models, args.model_base.name)()
+
+    ## load a prediction set
+    model_ps = getattr(models, args.model_ps.name)(args.model_ps, model_base)
+
+    ## prediction
+    n_err = 0
+    results = []
+    results_fn = os.path.join(args.output_root, args.exp_name, '_'.join(args.data.path.split('/')[1:]), args.model_ps.name, 'results.pk')
+    
+    
+    for t, (timestamp, obs) in enumerate(ds.seq):
+        
+        time = np.array(timestamp.item()).astype('datetime64[s]')
+        obs = obs.unsqueeze(0)
+        if t == 0:
+            model_ps.base.init_state(obs)
+        else:
+            # measure the performance
+            n_err += model_ps.error(obs)
+            ps = model_ps.predict()
+
+            # update thresholds        
+            model_ps.update(obs)
+
+            # update the KF state
+            state_est = model_ps.base(obs)
+
+            print(f"[time = {time}] obs = {obs.item()}, mu = {state_est['mu'].item():.2f}, cov = {state_est['cov'].item():.4f}, "\
+                  f"threshold = {model_ps.threshold:.4f}, interval = [{ps[0]:.2f}, {ps[1]:.2f}], length = {ps[1] - ps[0]:.2f}, error = {n_err / t}")
+
+            results.append({'time': time, 'obs': obs, 'pred_set': ps, 'error': n_err / t})
+            if t >= args.model_ps.T:
+                break
+
+    os.makedirs(os.path.dirname(results_fn), exist_ok=True)
+    import pickle
+    pickle.dump({'predictions': results, 'args': args}, open(results_fn, 'wb'))
 
 
 def run(args):
@@ -105,7 +153,8 @@ def run(args):
     os.makedirs(os.path.dirname(results_fn), exist_ok=True)
     import pickle
     pickle.dump({'predictions': results, 'args': args}, open(results_fn, 'wb'))
-        
+
+    
 if __name__ == '__main__':
     args = parse_args()
     run(args)
