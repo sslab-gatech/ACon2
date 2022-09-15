@@ -12,18 +12,21 @@ class NoObservation(Exception):
 
 class SinglePriceDataset:
     def __init__(self, path):
-        file_names = sorted(glob.glob(path + '*.pk'))
-        self.data = [d for f in file_names for d in pickle.load(open(f, 'rb'))]
-        
+        file_name = glob.glob(path + '.pk')
+        assert(len(file_name) == 1)
+        file_name = file_name[0]
+        self.data = pickle.load(open(file_name, 'rb'))
+
+        # check if data is sorted
+        timestamps = [d['time'] for d in self.data]
+        for t1, t2 in zip(timestamps[:-1], timestamps[1:]):
+            assert t1 <= t2, f'data is not sorted: {t1} > {t2}'
+
         # time type conversion
         for i in range(len(self.data)):
             self.data[i]['time'] = self.data[i]['time'].astype('datetime64[s]')
             self.data[i]['price'] = float(self.data[i]['price']) if type(self.data[i]['price']) is not float else self.data[i]['price']
         
-        # check if data is sorted
-        timestamps = [d['time'].astype('int') for d in self.data]
-        for t1, t2 in zip(timestamps[:-1], timestamps[1:]):
-            assert(t1 <= t2)
 
         self.reset()
         
@@ -57,12 +60,12 @@ class SinglePriceDataset:
             raise NoObservation
         else:
             self.index = index + 1
-            return self[index]
+            return self[index]['price']
 
 
 class PriceDataset:
     def __init__(
-            self, data_path,
+        self, data_path,
     ):
         self.seq = {}
         for p in data_path:
@@ -82,6 +85,28 @@ class PriceDataset:
             except NoObservation:
                 out[k] = None
         return out            
+
+
+class RandomPriceDataset:
+    def __init__(self, path, sig=5, seed=None):
+        assert(len(path) == 1)
+        self.path = path[0] #TODO: dummy
+        self.sig = sig
+        self.price = 0.0
+        np.random.seed(seed)
+
+    def _read(self):
+        self.price = np.random.normal(loc=self.price, scale=self.sig)
+        #self.price += 2.0
+        return self.price
         
+    def reset(self):
+        self.price = 0.0
+
+    def read(self, time):
+        return {self.path: self._read()}
+        
+        
+    
 if __name__ == '__main__':
     dsld = Price('price_ETH_USD/coinbase')

@@ -21,6 +21,7 @@ class RCI:
         self.initialized = False
         self.ps = None
         self.updated = False
+        self.err_list = []
         
         
     def error(self, label):
@@ -43,24 +44,28 @@ class RCI:
             self.initialized = True
         else:
             # check error
-            self.n_err += self.error(label)
+            err = self.error(label)
+            self.n_err += err
             self.ps = self.predict()
+            self.n_obs += 1
+            #self.err_list.append(err)
 
             # update ps
-            score = self.base.score(label)
-            assert(not np.isnan(score))
-            err = (score < self.threshold).astype('float')
             self.threshold = self.threshold + self.eta*(self.args.alpha - err)
+            print(self.eta, self.args.alpha, err, self.threshold)
+
             self.threshold = max(self.args.threshold_min, self.threshold)
             self.threshold = min(self.args.threshold_max, self.threshold)
 
+            
             self.label = label
-            self.n_obs += 1
-
+            
             # update the base model
             self.base_out = self.base(label)
-
+            
             self.updated = True
+
+            print(self.n_err / self.n_obs)
 
 
             

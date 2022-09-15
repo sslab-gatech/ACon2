@@ -9,21 +9,18 @@ import numpy as np
 1D Kalman Filter
 """
 class KF1D(tc.nn.Module):
-    def __init__(self, state_noise_init=10.0, obs_noise_init=10.0, lr=1e-3):
+    def __init__(self, args):
         super().__init__()
-        
+        print(args)
+        self.args = args
         self.dim = 1
-        # self.state_mu = tc.nn.Parameter(tc.zeros(self.dim, self.dim))
-        # self.state_cov = tc.nn.Parameter(tc.ones(self.dim, self.dim))
-        #self.state_mu = tc.zeros(self.dim, self.dim)
-        #self.state_cov = tc.ones(self.dim, self.dim)
-        
-        self.state_noise = tc.nn.Parameter(tc.ones(self.dim, self.dim)*state_noise_init)
-        self.obs_noise = tc.nn.Parameter(tc.ones(self.dim, self.dim)*obs_noise_init)
+        self.state_noise = tc.nn.Parameter(tc.ones(self.dim, self.dim)*args.state_noise_init)
+        self.obs_noise = tc.nn.Parameter(tc.ones(self.dim, self.dim)*args.obs_noise_init)
         self.trans_model = tc.tensor([[1.0]])
         self.obs_model = tc.tensor([[1.0]])
+        self.score_max = args.score_max
 
-        self.opt = tc.optim.SGD([self.state_noise, self.obs_noise], lr=lr)
+        self.opt = tc.optim.SGD([self.state_noise, self.obs_noise], lr=args.lr)
 
 
     def encode(self, obs):
@@ -36,8 +33,8 @@ class KF1D(tc.nn.Module):
         
         
     def predict(self):
-        state_mu_pred = self.trans_model * self.state_mu
-        state_cov_pred = self.trans_model * self.state_cov * self.trans_model.t() + self.state_noise #tc.exp(self.state_noise)
+        state_mu_pred = self.trans_model * self.state_mu.detach()
+        state_cov_pred = self.trans_model * self.state_cov.detach() * self.trans_model.t() + tc.exp(self.state_noise) #self.state_noise #tc.exp(self.state_noise)
         return {'mu': state_mu_pred, 'cov': state_cov_pred}
     
 
@@ -47,20 +44,20 @@ class KF1D(tc.nn.Module):
 
         state_mu_pred, state_cov_pred = state_pred['mu'], state_pred['cov']
 
-        # # update noise parameters
-        # self.opt.zero_grad()
-        # loss = - tc.distributions.normal.Normal(state_mu_pred, state_cov_pred.sqrt()).log_prob(obs)
-        # loss.backward(retain_graph=True)
-        # self.opt.step()
-        # print(loss.item(), self.obs_noise.item(), self.state_noise.item())
-
         # update a state
         obs_inno = obs - self.obs_model * state_mu_pred
-        cov_inno = self.obs_model * state_cov_pred * self.obs_model.t() + self.obs_noise #tc.exp(self.obs_noise)
+        cov_inno = self.obs_model * state_cov_pred * self.obs_model.t() + tc.exp(self.obs_noise) #self.obs_noise #tc.exp(self.obs_noise)
         opt_kalman_gain = state_cov_pred * self.obs_model.t() * tc.inverse(cov_inno)
 
         self.state_mu = state_mu_pred + opt_kalman_gain * obs_inno
         self.state_cov = (tc.eye(self.dim, self.dim) - opt_kalman_gain * self.obs_model) * state_cov_pred
+
+        # update noise parameters
+        self.opt.zero_grad()
+        # the negative likelihood of CX + w on an observation, where C = [[1]] is the observation matrix, X is the state, and w is the observation noise
+        loss = - tc.distributions.normal.Normal(self.state_mu, (tc.exp(self.state_cov) + tc.exp(self.obs_noise)).sqrt()).log_prob(obs)
+        loss.backward(retain_graph=True)
+        self.opt.step()
 
         return {'mu': self.state_mu, 'cov': self.state_cov}
 
@@ -80,12 +77,13 @@ class KF1D(tc.nn.Module):
         obs = self.encode(obs)
         # score on the predicted state
         state_pred = self.predict()
-        score = norm.pdf(obs.item(), loc=state_pred['mu'].item(), scale=state_pred['cov'].sqrt().item())
-
+        score = norm.pdf(obs.item(), loc=state_pred['mu'].item(), scale=(state_pred['cov'] + tc.exp(self.obs_noise)).sqrt().item())
+        score = score / self.score_max
         return score
 
 
     def superlevelset(self, t):
+        t = t * self.score_max
         state_pred = self.predict()
         if hasattr(t, 'item'):
             t = t.item()

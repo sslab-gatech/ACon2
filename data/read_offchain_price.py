@@ -52,7 +52,9 @@ def request_batch(name, time_start, time_end, time_step_sec, request_func, postp
 def get_from_coinbase(pair0, pair1, time_start=None, time_end=None, time_step_sec=None):
     import cbpro
     c = cbpro.PublicClient()
-
+    # print(c.get_products())
+    # sys.exit()
+    
     def read_price_from_request(data_req):
         data = pd.DataFrame(data_req)
         data.columns= ["time","open","high","low","close","volume"]
@@ -88,9 +90,35 @@ def get_from_coinbase(pair0, pair1, time_start=None, time_end=None, time_step_se
                     break
                 t_end += np.timedelta64(time_step_sec, 's')
 
-            print(f'[coinbase, request] start time = {t_start}, end time = {t_end}')
-            data_req_i = c.get_product_historic_rates(product_id=f'{pair0}-{pair1}', start=t_start, end=t_end, granularity=time_step_sec)
-            data_pk_i = read_price_from_request(data_req_i)
+            if pair0 is not 'USD' and pair1 is not 'USD':
+                data_req_i_0 = c.get_product_historic_rates(product_id=f'{pair0}-USD', start=t_start, end=t_end, granularity=time_step_sec)
+                data_pk_i_0 = read_price_from_request(data_req_i_0)
+                data_pk_i_0_dict = {d['time']: d['price'] for d in data_pk_i_0}
+
+                time.sleep(0.05)
+
+                data_req_i_1 = c.get_product_historic_rates(product_id=f'{pair1}-USD', start=t_start, end=t_end, granularity=time_step_sec)
+                data_pk_i_1 = read_price_from_request(data_req_i_1)
+                data_pk_i_1_dict = {d['time']: d['price'] for d in data_pk_i_1}
+
+                # merge
+                data_pk_i = []
+                pair0_current = None
+                pair1_current = None
+                for t in sorted(list(set([d['time'] for d in data_pk_i_0] + [d['time'] for d in data_pk_i_1]))):
+                    if t in data_pk_i_0_dict:
+                        pair0_current = data_pk_i_0_dict[t]
+                    if t in data_pk_i_1_dict:
+                        pair1_current = data_pk_i_1_dict[t]
+
+                    if pair0_current is not None and pair1_current is not None:
+                        data_pk_i.append({'time': t, 'price': pair0_current / pair1_current})
+            else:
+                data_req_i = c.get_product_historic_rates(product_id=f'{pair0}-{pair1}', start=t_start, end=t_end, granularity=time_step_sec)
+                data_pk_i = read_price_from_request(data_req_i)
+
+            print(f'[coinbase, request] start time = {t_start}, end time = {t_end}, n_data = {len(data_pk_i)}')
+                
             data_pk += data_pk_i
             t_end += np.timedelta64(time_step_sec, 's')
 
@@ -159,22 +187,33 @@ def get_from_binance(pair0, pair1, time_start=None, time_end=None, time_step_sec
 
     
 if __name__ == '__main__':
-    market = 'binance'
-    pair0 = 'ETH'
-    pair1 = 'USD'
+    # market = 'binance'
+    # pair0 = 'ETH'
+    # pair1 = 'USD'
+    # root = f'price_{pair0}_{pair1}'
+    # time_start = np.datetime64('2021-01-01T00:00')
+    # time_end = np.datetime64('2021-12-31T23:59')           
+    # time_step_sec = 60
+
+    market = 'coinbase'
+    pair0 = 'INV'
+    pair1 = 'ETH'
     root = f'price_{pair0}_{pair1}'
-    time_start = np.datetime64('2021-01-01T00:00')
-    time_end = np.datetime64('2021-12-31T23:59')           
+    time_start = np.datetime64('2022-02-01T00:00')
+    time_end = np.datetime64('2022-04-30T23:59')           
     time_step_sec = 60
 
+
+    os.makedirs(root, exist_ok=True)
+    
     if market == 'coinbase':
         # coinbase
         data = get_from_coinbase(pair0, pair1, time_start, time_end, time_step_sec)
-        pickle.dump(data, open(os.path.join(root, 'coinbase.pk'), 'wb'))
+        pickle.dump(data, open(os.path.join(root, f'coinbase_{time_start}_{time_end}.pk'), 'wb'))
         
     elif market == 'binance':
         data = get_from_binance(pair0, pair1, time_start, time_end, time_step_sec)
-        pickle.dump(data, open(os.path.join(root, 'binance.pk'), 'wb'))
+        pickle.dump(data, open(os.path.join(root, f'binance_{time_start}_{time_end}.pk'), 'wb'))
         
     # print('gemini =\n', get_from_gemini(pair0, pair1))
     # print('kraken =\n', get_from_kraken(pair0, pair1))

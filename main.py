@@ -2,6 +2,7 @@ import os, sys
 import argparse
 import torch as tc
 import copy
+import warnings
 
 import data
 import utils
@@ -21,9 +22,9 @@ def parse_args():
     ## data args
     parser.add_argument('--data.name', type=str, default='PriceDataset')
     parser.add_argument('--data.path', type=str, nargs='+', default=[
-        'data/price_ETH_USD/coinbase',
-        'data/price_ETH_USD/binance',
-        'data/price_ETH_USD/UniswapV2',
+        'data/price_USD_ETH/coinbase',
+        'data/price_USD_ETH/binance',
+        'data/price_USD_ETH/UniswapV2',
     ])    
     #parser.add_argument('--data.path', type=str, default='data/price_ETH_USD/coinbase')    
     # parser.add_argument('--data.batch_size', type=int, default=1)
@@ -32,21 +33,26 @@ def parse_args():
 
     ## model args
     parser.add_argument('--model_base.name', type=str, nargs='+', default=['KF1D', 'KF1D', 'KF1D'])
-    parser.add_argument('--model_ps.name', type=str, nargs='+', default=['RCI', 'RCI', 'RCI'])
-    parser.add_argument('--model_ps.threshold_min', type=float, nargs='+', default=[0.0, 0.0, 0.0])
-    parser.add_argument('--model_ps.threshold_max', type=float, nargs='+', default=[10.0, 10.0, 10.0])
-    parser.add_argument('--model_ps.threshold_step', type=float, nargs='+', default=[0.01, 0.01, 0.01])
+    parser.add_argument('--model_base.score_min', type=float, nargs='+', default=[0.0, 0.0, 0.0])
+    parser.add_argument('--model_base.score_max', type=float, nargs='+', default=[1.0, 1.0, 1.0])
+    parser.add_argument('--model_base.lr', type=float, nargs='+', default=[1e-5, 1e-5, 1e-5])
+    parser.add_argument('--model_base.state_noise_init', type=float, nargs='+', default=[1.0, 1.0, 1.0])
+    parser.add_argument('--model_base.obs_noise_init', type=float, nargs='+', default=[1.0, 1.0, 1.0])
+    
+    parser.add_argument('--model_ps.name', type=str, nargs='+', default=['MVPSimple', 'MVPSimple', 'MVPSimple'])    
+    # parser.add_argument('--model_ps.threshold_min', type=float, nargs='+', default=[0.0, 0.0, 0.0])
+    # parser.add_argument('--model_ps.threshold_max', type=float, nargs='+', default=[1.0, 1.0, 1.0])
+    # parser.add_argument('--model_ps.threshold_step', type=float, nargs='+', default=[0.01, 0.01, 0.00])
+    parser.add_argument('--model_ps.n_bins', type=int, nargs='+', default=[100, 100, 100])
+    
+    parser.add_argument('--model_ps.eta', type=float, default=0.9)
     parser.add_argument('--model_ps.alpha', type=float, nargs='+', default=[0.01, 0.01, 0.01])
+    parser.add_argument('--model_ps.beta', type=int, default=1) 
     #parser.add_argument('--model_ps.T', type=int, default=50000)
     
 
     ## training algorithm args
     parser.add_argument('--train.method', type=str, default='skip')
-    
-    # ## calibration algorithm args
-    # parser.add_argument('--cal.method', type=str, default='EWA')
-    # parser.add_argument('--cal.alpha', type=float, default=0.1)
-    # parser.add_argument('--cal.rerun', action='store_true')
     
 
     args = parser.parse_args()
@@ -84,10 +90,11 @@ def run1(args):
     
     ## load a base model
     #model_base = getattr(models, args.model_base.name)(state_noise_init=np.log(10), obs_noise_init=np.log(10))
-    model_base = getattr(models, args.model_base.name)()
+    model_base = getattr(models, args.model_base.name)(args.model_base)
 
     ## load a prediction set
     model_ps = getattr(models, args.model_ps.name)(args.model_ps, model_base)
+    model_cs = models.ACC(model_base)
 
     ## prediction
     n_err = 0
@@ -143,18 +150,15 @@ class Clock:
         return time
         
 
-def run(args):
+def run_indep(args):
 
     ## load a dataset
     ds = getattr(data, args.data.name)(args.data.path)
 
     ## load a base model
-    #model_base = getattr(models, args.model_base.name)(state_noise_init=np.log(10), obs_noise_init=np.log(10))
-    #model_base = getattr(models, args.model_base.name)()
     model_base = {k: getattr(models, v)() for k, v in zip(args.data.path, args.model_base.name)}
 
     ## load a prediction set
-    #model_ps = getattr(models, args.model_ps.name)(args.model_ps, model_base)
     model_ps = {k: getattr(models, model_name)(model_args, model_base[k]) for k, model_name, model_args in zip(args.data.path, args.model_ps.name, split_args(args.model_ps))}
 
     ## prediction
@@ -186,6 +190,62 @@ def run(args):
     os.makedirs(os.path.dirname(results_fn), exist_ok=True)
     import pickle
     pickle.dump({'predictions': results, 'args': args}, open(results_fn, 'wb'))
+
+
+def run(args):
+    # time_start = np.datetime64('2021-01-01T00:00')
+    # time_end = np.datetime64('2021-12-31T23:59')
+    # time_delta = np.timedelta64(30, 's')
+
+    time_start = np.datetime64('2022-03-01T00:00')
+    time_end = np.datetime64('2022-05-31T23:59')
+    time_delta = np.timedelta64(10, 's')
+    
+    ## load a dataset
+    ds = getattr(data, args.data.name)(args.data.path)
+
+    ## load a base model
+    model_base = {k: getattr(models, v)(model_base_args) for k, v, model_base_args in zip(args.data.path, args.model_base.name, split_args(args.model_base))}
+    
+    ## load a prediction set
+    model_ps_src = {k: getattr(models, model_name)(model_args, model_base[k]) for k, model_name, model_args in zip(args.data.path, args.model_ps.name, split_args(args.model_ps))}
+
+    model_ps = models.ACC(args.model_ps, model_ps_src)
+
+    ## prediction
+    results = []
+    outputs_fn = os.path.join(args.output_root, args.exp_name, 'out.pk')
+
+    for i, time in enumerate(Clock(time_start, time_end, time_delta)):
+        # read observations
+        try: 
+            obs = ds.read(time)
+        except StopIteration:
+            break
+
+        if all([obs[k] is None for k in obs.keys()]):
+            continue
+            
+        
+        # update
+        if not model_ps.initialized:
+            model_ps.init_or_update(obs) #TODO: init
+        else:
+            model_ps.init_or_update(obs) #TODO: update
+            
+            # vis
+            # if model_ps.updated:
+            #     print(obs)
+
+            print(f"[time = {time}] median(obs) = {np.median([obs[k] for k in obs.keys() if obs[k] is not None]):.2f}, "\
+                  f"interval = [{model_ps.ps[0]:.2f}, {model_ps.ps[1]:.2f}], length = {model_ps.ps[1] - model_ps.ps[0]:.2f}, "\
+                  f"error = {model_ps.n_err / model_ps.n_obs:.4f}")
+            results.append({'time': time, 'prediction_summary': model_ps.summary(), 'observation': obs})
+
+    # save
+    os.makedirs(os.path.dirname(outputs_fn), exist_ok=True)
+    import pickle
+    pickle.dump({'results': results, 'args': args}, open(outputs_fn, 'wb'))
 
     
 if __name__ == '__main__':
