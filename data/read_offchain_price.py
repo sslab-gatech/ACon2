@@ -195,7 +195,8 @@ if __name__ == '__main__':
     # time_end = np.datetime64('2021-12-31T23:59')           
     # time_step_sec = 60
 
-    market = 'coinbase'
+    #market = 'coinbase'
+    market = 'binance'
     pair0 = 'INV'
     pair1 = 'ETH'
     root = f'price_{pair0}_{pair1}'

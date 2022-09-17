@@ -12,10 +12,25 @@ class NoObservation(Exception):
 
 class SinglePriceDataset:
     def __init__(self, path):
-        file_name = glob.glob(path + '.pk')
-        assert(len(file_name) == 1)
+        file_name = glob.glob(path + '*.pk')
+        if len(file_name) == 0:
+            path_split = path.split('/')
+            pair_name = path_split[-2]
+            pair_name_split = pair_name.split('_')
+            pair_name = '_'.join([pair_name_split[0], pair_name_split[2], pair_name_split[1]])
+            path_split[-2] = pair_name
+            path = '/'.join(path_split)
+            
+            file_name = glob.glob(path + '*.pk')
+            assert(len(file_name) == 1)
+            self.inverse_price = True
+        else:
+            assert(len(file_name) == 1)
+            self.inverse_price = False
+            
         file_name = file_name[0]
         self.data = pickle.load(open(file_name, 'rb'))
+        
 
         # check if data is sorted
         timestamps = [d['time'] for d in self.data]
@@ -33,6 +48,8 @@ class SinglePriceDataset:
         
     def __getitem__(self, index):
         time, price = self.data[index]['time'], self.data[index]['price']
+        if self.inverse_price:
+            price = 1 / price
         return {'timestamp': time.astype('int'), 'price': price}
 
 

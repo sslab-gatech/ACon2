@@ -183,7 +183,7 @@ class MVP:
             self.base_out = self.base(label)
 
 
-            print('threshold =', 1 - self.threshold, 'score =', 1 - score, f'interval = [{self.ps[0]}, {self.ps[1]}]')
+            # print('threshold =', 1 - self.threshold, 'score =', 1 - score, f'interval = [{self.ps[0]}, {self.ps[1]}]')
             self.n_err = np.sum(self.mvp.bg_miscoverage)
             self.n_obs += 1
             self.label = label
@@ -192,7 +192,7 @@ class MVP:
             self.mvp.coverage_stats(plot_thresholds=False)
 
             
-            print('miscoverage =', self.n_err / self.n_obs)
+            # print('miscoverage =', self.n_err / self.n_obs)
             
     def summary(self):
         return {
@@ -223,7 +223,7 @@ class MVPSimple:
         self.n_obs = 0
         self.initialized = False
         self.ps = None
-        self.updated = False
+        # self.updated = False
 
         self.thres_cnt = np.zeros(self.n_bins)
         self.corr_cnt = np.zeros(self.n_bins)
@@ -232,6 +232,7 @@ class MVPSimple:
         
     def error(self, label):
         score = self.base.score(label)
+        # print(f'score = {score}, label = {label}, threshold = {self.threshold}')
         if score >= 1.0:
             warnings.warn(f'score is larger than one: score = {score}')
         return (score < self.threshold).astype('float')
@@ -239,10 +240,11 @@ class MVPSimple:
     
     def predict(self):
         interval = self.base.superlevelset(self.threshold)
+        # print(f'verify interval = {self.error(interval[0]+1e-3)}, {self.error(np.mean(interval))}, {self.error(interval[1]-1e-3)}')
         return interval
 
     
-    def update(self, label):
+    def init_or_update(self, label):
         
         if label is None:
             return
@@ -375,16 +377,16 @@ class MVPSimple:
             # update a threshold
             self.threshold = 1.0 - find_threshold_mvp()
 
-            print(f'threshold = {self.threshold:.4f}, size = {self.ps[1] - self.ps[0]:.4f}, interval = [{self.ps[0]:.4f}, {self.ps[1]:.4f}]')
+            # print(f'threshold = {self.threshold:.4f}, size = {self.ps[1] - self.ps[0]:.4f}, interval = [{self.ps[0]:.4f}, {self.ps[1]:.4f}]')
 
 
             # update the base model
             self.base_out = self.base(label)
 
             self.label = label
-            self.updated = True
+            # self.updated = True
             
-            print(f'miscoverage = {self.n_err / self.n_obs:.4f}')
+            # print(f'miscoverage = {self.n_err / self.n_obs:.4f}')
             
     def summary(self):
         return {
