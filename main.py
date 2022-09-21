@@ -193,13 +193,13 @@ class Clock:
 
 
 def run(args):
-    # time_start = np.datetime64('2021-01-01T00:00')
-    # time_end = np.datetime64('2021-12-31T23:59')
-    # time_delta = np.timedelta64(30, 's')
+    time_start = np.datetime64('2021-01-01T00:00')
+    time_end = np.datetime64('2021-12-31T23:59')
+    time_delta = np.timedelta64(30, 's')
 
-    time_start = np.datetime64('2022-03-31T00:00')
-    time_end = np.datetime64('2022-05-31T23:59')
-    time_delta = np.timedelta64(10, 's')
+    # time_start = np.datetime64('2022-03-31T00:00')
+    # time_end = np.datetime64('2022-05-31T23:59')
+    # time_delta = np.timedelta64(10, 's')
     
     ## load a dataset
     ds = getattr(data, args.data.name)(args.data.path)
