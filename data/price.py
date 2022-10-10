@@ -63,7 +63,7 @@ class SinglePriceDataset:
 
     def read(self, timestamp):
 
-        if self.index == len(self):
+        if self.index + 1 == len(self):
             raise StopIteration
         
         index = None
@@ -76,7 +76,7 @@ class SinglePriceDataset:
         if index is None:
             raise NoObservation
         else:
-            self.index = index + 1
+            self.index = index
             return self[index]['price']
 
 
@@ -122,7 +122,23 @@ class RandomPriceDataset:
 
     def read(self, time):
         return {self.path: self._read()}
+
+    
+class ZeroPriceDataset:
+    def __init__(self, path, sig=5, seed=None):
+        self.path = path[0] #TODO: dummy
+        self.reset()
+
         
+    def _read(self):
+        return self.price
+        
+    def reset(self):
+        self.price = 0.0
+
+        
+    def read(self, time):
+        return {self.path: self._read()}
         
     
 if __name__ == '__main__':

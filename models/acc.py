@@ -29,8 +29,16 @@ class ACC:
     def error(self, label):
         # assume the median is the consensued value
         label_c = np.median([label[k] for k in label.keys() if label[k] is not None])
-        score = int(np.sum([1.0 - self.models[k].error(label_c) for k in label.keys()]))
-        return float(score < len(self.models) - self.args.beta)
+        # score = int(np.sum([1.0 - self.models[k].error(label_c) for k in label.keys()]))
+        # return float(score < len(self.models) - self.args.beta)
+
+        itv, _ = self.predict()
+        if itv[0] <= label_c and label_c <= itv[1]:
+            return 0.0
+        else:
+            return 1.0
+
+    
     
     
     # def predict(self, search_step=1e-4):
@@ -125,16 +133,18 @@ class ACC:
         
     def predict(self):
         ps = []
+        bps = {}
         for k in self.models.keys():
             ps_k = self.models[k].predict()
-            print(f'{k} = [{ps_k[0]}, {ps_k[1]}]')
+            bps[k] = ps_k
+            #print(f'{k} = [{ps_k[0]}, {ps_k[1]}]')
             if all(np.isnan(ps_k) == False):
                 ps.append(ps_k)
             
         if len(ps) == 0:
-            return [-np.inf, np.inf]
+            return [-np.inf, np.inf], bps
         else:
-            edges = sorted([p_i for p in ps for p_i in p])
+            edges = sorted([p_i for p in ps for p_i in p]) #TODO: sorting is not necessary
             edges_vote = [0]*len(edges)
             for i, e in enumerate(edges):
                 for ps_i in ps:
@@ -145,19 +155,19 @@ class ACC:
                 if v >= len(ps) - self.args.beta:
                     edges_maj.append(edges[i])
             if len(edges_maj) == 0:
-                return [-np.inf, np.inf]
+                return [-np.inf, np.inf], bps
             else:
-                return [np.min(edges_maj), np.max(edges_maj)]
+                return [np.min(edges_maj), np.max(edges_maj)], bps
 
             
     def init_or_update(self, label):
 
         if self.initialized:
             # check error
-            err = self.error(label)
-            self.n_err += err
-            self.ps = self.predict()
+            self.n_err += self.error(label)
             self.n_obs += 1
+            self.ps, self.bps = self.predict()
+            # print(f'ACC: error = {self.n_err}, n = {self.n_obs}')
 
         # init or update
         for k in label.keys():
@@ -167,6 +177,13 @@ class ACC:
     def summary(self):
         return {
             'ps': self.ps,
+            'ps_updated': self.predict()[0],
+            'base_ps': self.bps,
             'n_err': self.n_err,
             'n_obs': self.n_obs,
+            'n_err_base': {k: self.models[k].n_err for k in self.models.keys()},
+            'n_obs_base': {k: self.models[k].n_obs for k in self.models.keys()},
+            'alpha': self.args.alpha,
+            'beta': self.args.beta,
+            'K': len(self.models),
         }

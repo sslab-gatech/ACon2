@@ -83,6 +83,7 @@ class KF1D(tc.nn.Module):
 
 
     def superlevelset(self, t):
+        warnings.warn('I need a super-level set over an observation distribution')
         t = t * self.score_max
         state_pred = self.predict()
         if hasattr(t, 'item'):
@@ -90,6 +91,8 @@ class KF1D(tc.nn.Module):
         t = max(1e-9, t) # avoid numerical error
         mu = state_pred['mu'].item()
         sig = state_pred['cov'].sqrt().item()
-        c = - 2 * np.log(t) - 2 * np.log(sig) - np.log(2*np.pi)
+        c = - 2 * np.log(t + 1e-9) - 2 * np.log(sig + 1e-9) - np.log(2*np.pi) # avoid numerical error
+        c = max(0, c) # an empty prediction set
         interval = [mu - sig * np.sqrt(c), mu + sig * np.sqrt(c)]
+        assert not any(np.isnan(interval)), f't = {t}, mu = {mu}, sig = {sig}, c = {c}'
         return interval

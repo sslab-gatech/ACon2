@@ -3,6 +3,7 @@ import argparse
 import torch as tc
 import copy
 import warnings
+import pickle
 
 import data
 import utils
@@ -25,7 +26,13 @@ def parse_args():
         'data/price_USD_ETH/coinbase',
         'data/price_USD_ETH/binance',
         'data/price_USD_ETH/UniswapV2',
-    ])    
+    ])
+    parser.add_argument('--data.start_time', type=str, default='2021-01-01T00:00')
+    parser.add_argument('--data.end_time', type=str, default='2021-12-31T23:59')
+    parser.add_argument('--data.time_step_sec', type=int, default=60)
+
+
+    
     #parser.add_argument('--data.path', type=str, default='data/price_ETH_USD/coinbase')    
     # parser.add_argument('--data.batch_size', type=int, default=1)
     # parser.add_argument('--data.n_workers', type=int, default=0)
@@ -39,7 +46,7 @@ def parse_args():
     parser.add_argument('--model_base.state_noise_init', type=float, nargs='+', default=[1.0, 1.0, 1.0])
     parser.add_argument('--model_base.obs_noise_init', type=float, nargs='+', default=[1.0, 1.0, 1.0])
     
-    parser.add_argument('--model_ps.name', type=str, nargs='+', default=['MVPSimple', 'MVPSimple', 'MVPSimple'])    
+    parser.add_argument('--model_ps.name', type=str, nargs='+', default=['SpecialMVP', 'SpecialMVP', 'SpecialMVP'])    
     # parser.add_argument('--model_ps.threshold_min', type=float, nargs='+', default=[0.0, 0.0, 0.0])
     # parser.add_argument('--model_ps.threshold_max', type=float, nargs='+', default=[1.0, 1.0, 1.0])
     # parser.add_argument('--model_ps.threshold_step', type=float, nargs='+', default=[0.01, 0.01, 0.00])
@@ -193,9 +200,9 @@ class Clock:
 
 
 def run(args):
-    time_start = np.datetime64('2021-01-01T00:00')
-    time_end = np.datetime64('2021-12-31T23:59')
-    time_delta = np.timedelta64(30, 's')
+    time_start = np.datetime64(args.data.start_time)
+    time_end = np.datetime64(args.data.end_time)
+    time_delta = np.timedelta64(args.data.time_step_sec, 's')
 
     # time_start = np.datetime64('2022-03-31T00:00')
     # time_end = np.datetime64('2022-05-31T23:59')
@@ -215,6 +222,7 @@ def run(args):
     ## prediction
     results = []
     outputs_fn = os.path.join(args.output_root, args.exp_name, 'out.pk')
+    os.makedirs(os.path.dirname(outputs_fn), exist_ok=True)
 
     for i, time in enumerate(Clock(time_start, time_end, time_delta)):
         # read observations
@@ -238,10 +246,9 @@ def run(args):
                   f"error = {model_ps.n_err / model_ps.n_obs:.4f}")
             results.append({'time': time, 'prediction_summary': model_ps.summary(), 'observation': obs})
 
-    # save
-    os.makedirs(os.path.dirname(outputs_fn), exist_ok=True)
-    import pickle
-    pickle.dump({'results': results, 'args': args}, open(outputs_fn, 'wb'))
+        if i%1000 == 0:
+            # save
+            pickle.dump({'results': results, 'args': args}, open(outputs_fn, 'wb'))
 
     
 if __name__ == '__main__':
