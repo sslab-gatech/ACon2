@@ -35,6 +35,9 @@ class KF1D(tc.nn.Module):
     def predict(self):
         state_mu_pred = self.trans_model * self.state_mu.detach()
         state_cov_pred = self.trans_model * self.state_cov.detach() * self.trans_model.t() + tc.exp(self.state_noise) #self.state_noise #tc.exp(self.state_noise)
+
+        # print(f'[KF, pred] mu = {state_mu_pred.item():.4f}, sig = {state_cov_pred.sqrt().item():.4f}')
+
         return {'mu': state_mu_pred, 'cov': state_cov_pred}
     
 
@@ -42,6 +45,7 @@ class KF1D(tc.nn.Module):
         obs = self.encode(obs)
         assert(obs.shape == tc.Size([self.dim, self.dim]))
 
+        # state prediction
         state_mu_pred, state_cov_pred = state_pred['mu'], state_pred['cov']
 
         # update a state
@@ -88,7 +92,11 @@ class KF1D(tc.nn.Module):
         state_pred = self.predict()
         if hasattr(t, 'item'):
             t = t.item()
-        t = max(1e-9, t) # avoid numerical error
+        #t = max(1e-9, t) # avoid numerical error
+        # if t == 0:
+        #     interval = [-np.inf, np.inf]
+        #     return interval
+        
         mu = state_pred['mu'].item()
         sig = state_pred['cov'].sqrt().item()
         c = - 2 * np.log(t + 1e-9) - 2 * np.log(sig + 1e-9) - np.log(2*np.pi) # avoid numerical error

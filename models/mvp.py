@@ -403,7 +403,8 @@ class SpecialMVP:
         self.args = args
         self.base = model_base
         self.eta = self.args.eta
-        self.threshold = 0
+        # self.threshold = 0
+        # self.threshold = 1
         self.n_bins = self.args.n_bins
         self.r = 1000 # not sensitiy on results
         self.e = 1.0 # not sensitiy on results
@@ -419,7 +420,9 @@ class SpecialMVP:
 
         self.thres_cnt = np.zeros(self.n_bins)
         self.corr_cnt = np.zeros(self.n_bins)
-        self.norm_func = lambda n: np.sqrt((n+1) * np.power(np.log2(n+2), 1 + self.e))
+        assert(self.e == 1)
+        #self.norm_func = lambda n: np.sqrt((n+1) * np.power(np.log2(n+2), 1 + self.e))
+        self.norm_func = lambda n: np.sqrt((n+1) * (np.log2(n+2)**2))
         
         
     def error(self, label):
@@ -439,7 +442,6 @@ class SpecialMVP:
     
     def predict(self):
         interval = self.base.superlevelset(self.threshold)
-        # print(f'verify interval = {self.error(interval[0]+1e-3)}, {self.error(np.mean(interval))}, {self.error(interval[1]-1e-3)}')
         return interval
 
     
@@ -477,10 +479,12 @@ class SpecialMVP:
 
                     if np.random.rand() <= b:
                         thres = (1.0 * i) / self.n_bins - 1.0 /(self.r * self.n_bins)
-                        return thres
+                        # return thres
+                        return 1 - thres
                     else:
-                        thres = 1.0 * i / self.n_bins
-                        return thres
+                        thres = (1.0 * i) / self.n_bins
+                        # return thres
+                        return 1 - thres
                     
                 w_prev = w_cur
                 
@@ -488,12 +492,17 @@ class SpecialMVP:
                 return 1.0
             else:
                 return 0.0
+            # if pos:
+            #     return 0.0
+            # else:
+            #     return 1.0
 
 
         if not self.initialized:
             self.base.init_state(label)
             self.initialized = True
             self.threshold = find_threshold_mvp()
+            # self.threshold = 1 - find_threshold_mvp()
         else:
             
             # check error before update
@@ -506,15 +515,24 @@ class SpecialMVP:
             self.ps = self.predict()            
             
             # update stats
-            bin_idx = min(int((self.threshold) * self.n_bins + 0.5/self.r), self.n_bins - 1)
+            # bin_idx = min(int((self.threshold) * self.n_bins + 0.5/self.r), self.n_bins - 1)
+            bin_idx = min(int((1 - self.threshold) * self.n_bins + 0.5/self.r), self.n_bins - 1)
             
             self.thres_cnt[bin_idx] += 1
             self.corr_cnt[bin_idx] += self.args.alpha - err #TODO
 
+            # print(self.corr_cnt)
+            
             # update a threshold
+            ##DGB
+            # self.threshold = 1 - find_threshold_mvp()
             self.threshold = find_threshold_mvp()
             
-            print(f'threshold = {self.threshold:.4f}, size = {self.ps[1] - self.ps[0]:.4f}, interval = [{self.ps[0]:.4f}, {self.ps[1]:.4f}]')
+            print(f'[MVP] threshold = {self.threshold:.4f}, size = {self.ps[1] - self.ps[0]:.4f}, '
+                  f'interval = [{self.ps[0]:.4f}, {self.ps[1]:.4f}], obs = {label:.4f}, '
+                  f'error_cur = {err}, '
+                  f'error = {self.n_err / self.n_obs:.4f}'
+            )
 
 
             # update the base model

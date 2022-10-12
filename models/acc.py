@@ -141,23 +141,43 @@ class ACC:
             if all(np.isnan(ps_k) == False):
                 ps.append(ps_k)
             
-        if len(ps) == 0:
+        # if len(ps) == 0:
+        #     return [-np.inf, np.inf], bps
+        if len(ps) - self.args.beta <= 0:
             return [-np.inf, np.inf], bps
         else:
-            edges = sorted([p_i for p in ps for p_i in p]) #TODO: sorting is not necessary
+            # vote
+            #edges = sorted([p_i for p in ps for p_i in p]) #TODO: sorting is not necessary
+            edges = [p_i for p in ps for p_i in p]
             edges_vote = [0]*len(edges)
             for i, e in enumerate(edges):
                 for ps_i in ps:
                     if ps_i[0] <= e and e <= ps_i[1]:
                         edges_vote[i] += 1
-            edges_maj = []
-            for i, v in enumerate(edges_vote):
+
+
+            # interval
+            lower = np.inf
+            upper = -np.inf
+            for e, v in zip(edges, edges_vote):
                 if v >= len(ps) - self.args.beta:
-                    edges_maj.append(edges[i])
-            if len(edges_maj) == 0:
-                return [-np.inf, np.inf], bps
-            else:
-                return [np.min(edges_maj), np.max(edges_maj)], bps
+                    if lower > e:
+                        lower = e
+                    if upper < e:
+                        upper = e
+            if lower > upper:
+                lower, upper = upper, lower
+
+            return [lower, upper], bps
+        
+            # edges_maj = []
+            # for i, v in enumerate(edges_vote):
+            #     if v >= len(ps) - self.args.beta:
+            #         edges_maj.append(edges[i])
+            # if len(edges_maj) == 0:
+            #     return [-np.inf, np.inf], bps
+            # else:
+            #     return [np.min(edges_maj), np.max(edges_maj)], bps
 
             
     def init_or_update(self, label):

@@ -29,7 +29,7 @@ def parse_args():
     ])
     parser.add_argument('--data.start_time', type=str, default='2021-01-01T00:00')
     parser.add_argument('--data.end_time', type=str, default='2021-12-31T23:59')
-    parser.add_argument('--data.time_step_sec', type=int, default=60)
+    parser.add_argument('--data.time_step_sec', type=int, default=60) #60
 
 
     
@@ -43,8 +43,8 @@ def parse_args():
     parser.add_argument('--model_base.score_min', type=float, nargs='+', default=[0.0, 0.0, 0.0])
     parser.add_argument('--model_base.score_max', type=float, nargs='+', default=[1.0, 1.0, 1.0])
     parser.add_argument('--model_base.lr', type=float, nargs='+', default=[1e-3, 1e-3, 1e-3])
-    parser.add_argument('--model_base.state_noise_init', type=float, nargs='+', default=[1.0, 1.0, 1.0])
-    parser.add_argument('--model_base.obs_noise_init', type=float, nargs='+', default=[1.0, 1.0, 1.0])
+    parser.add_argument('--model_base.state_noise_init', type=float, nargs='+', default=[0.1, 0.1, 0.1])
+    parser.add_argument('--model_base.obs_noise_init', type=float, nargs='+', default=[0.1, 0.1, 0.1])
     
     parser.add_argument('--model_ps.name', type=str, nargs='+', default=['SpecialMVP', 'SpecialMVP', 'SpecialMVP'])    
     # parser.add_argument('--model_ps.threshold_min', type=float, nargs='+', default=[0.0, 0.0, 0.0])
@@ -64,6 +64,7 @@ def parse_args():
 
     args = parser.parse_args()
     args = utils.to_tree_namespace(args)
+    args.exp_name = f'{args.exp_name}_K_{len(args.data.path)}_beta_{args.model_ps.beta}'
     args.device = tc.device('cpu') if args.cpu else tc.device('cuda:0')
     args = utils.propagate_args(args, 'device')
     args = utils.propagate_args(args, 'exp_name')
@@ -246,11 +247,14 @@ def run(args):
                   f"error = {model_ps.n_err / model_ps.n_obs:.4f}")
             results.append({'time': time, 'prediction_summary': model_ps.summary(), 'observation': obs})
 
-        if i%1000 == 0:
+        if i%10000 == 0:
             # save
             pickle.dump({'results': results, 'args': args}, open(outputs_fn, 'wb'))
 
-    
+    # save
+    pickle.dump({'results': results, 'args': args}, open(outputs_fn, 'wb'))
+
+            
 if __name__ == '__main__':
     args = parse_args()
     run(args)
