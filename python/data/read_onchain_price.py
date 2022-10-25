@@ -67,7 +67,9 @@ def tokenname2addr(token_name):
 
 def get_spot_price_UniswapV2(args):
     w3 = web3.Web3(web3.Web3.HTTPProvider(args.provider_url))
-    assert(w3.isConnected())
+    #w3 = web3.Web3(web3.Web3.IPCProvider(args.provider_url))
+    # w3 = web3.Web3(web3.Web3.WebsocketProvider(args.provider_url))
+    assert w3.isConnected(), f'connection status: {w3.isConnected()}'
 
     # find blocks
     block_start = find_block(w3, np.datetime64(args.time_start, 's').astype('uint'))
@@ -92,7 +94,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='price reader')
     #parser.add_argument('--provider_url', type=str, default='https://eth-mainnet.alchemyapi.io/v2/TeK8vT24gEP564FbC7Z2GPHQCOMDA8wb')
-    parser.add_argument('--provider_url', type=str, default='https://weirdwolf.gtisc.gatech.edu:8545')
+    parser.add_argument('--provider_url', type=str, default='http://localhost:9000')
 
     # parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     # parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
