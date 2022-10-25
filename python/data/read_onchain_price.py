@@ -66,6 +66,9 @@ def tokenname2addr(token_name):
 
 
 def get_spot_price_UniswapV2(args):
+    root = f'price_{args.token0}_{args.token1}_start_{str(args.time_start).replace(" ", "_")}_end_{str(args.time_end).replace(" ", "_")}_step_sec_{args.time_interval_sec}'
+    os.makedirs(root, exist_ok=True)
+
     w3 = web3.Web3(web3.Web3.HTTPProvider(args.provider_url))
     #w3 = web3.Web3(web3.Web3.IPCProvider(args.provider_url))
     # w3 = web3.Web3(web3.Web3.WebsocketProvider(args.provider_url))
@@ -81,20 +84,34 @@ def get_spot_price_UniswapV2(args):
     factory = w3.eth.contract(factory_addr, abi=open('abi/abi_uniswap_v2_factory.json').read())
 
     # read price
+    data = []
+    fn_data = os.path.join(root, 'UniswapV2_spot_price.pk')
+    if os.path.exists(fn_data):
+        data = pickle.load(open(fn_data, "rb"))
+        set_block_numbers = set([d['block_number'] for d in data])
+    else:
+        set_block_numbers = set()
+
+        
     for block_number in range(block_start.number, block_end.number+1):
+        if block_number in set_block_numbers:
+            continue
         t = time.time()
         price = get_price(w3, factory, block_number, token0_addr=tokenname2addr(args.token0), token1_addr=tokenname2addr(args.token1))
-        print(f"[running time = {time.time() - t}, {np.array(w3.eth.get_block(block_number).timestamp, dtype='datetime64[s]')}] price = {price}")
-    
-    sys.exit()
+        block_time = np.array(w3.eth.get_block(block_number).timestamp, dtype='datetime64[s]')
+        print(f"[running time = {time.time() - t}, {block_time}] price = {price}")
+        d = {'time': block_time, 'price': price, 'block_number': block_number}
+        data.append(d)
         
+        pickle.dump(data, open(fn_data, 'wb'))
+
     
     
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='price reader')
-    #parser.add_argument('--provider_url', type=str, default='https://eth-mainnet.alchemyapi.io/v2/TeK8vT24gEP564FbC7Z2GPHQCOMDA8wb')
-    parser.add_argument('--provider_url', type=str, default='http://localhost:9000')
+    parser.add_argument('--provider_url', type=str, default='https://eth-mainnet.alchemyapi.io/v2/TeK8vT24gEP564FbC7Z2GPHQCOMDA8wb')
+    #parser.add_argument('--provider_url', type=str, default='http://localhost:9000')
 
     # parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     # parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
@@ -126,12 +143,9 @@ if __name__ == '__main__':
     # time_end = datetime(2022, 7, 31, 23, 59, 0, 0)
     # time_step_sec = 60
 
-    root = f'price_{args.token0}_{args.token1}_start_{str(args.time_start).replace(" ", "_")}_end_{str(args.time_end).replace(" ", "_")}_step_sec_{args.time_interval_sec}'
-    os.makedirs(root, exist_ok=True)
 
     if args.market_name == 'UniswapV2':
         data = get_spot_price_UniswapV2(args)
-        pickle.dump(data, open(os.path.join(root, 'UniswapV2_spot_price.pk'), 'wb'))
         
     elif market == 'SushiSwap':
         raise NotImplementedError
