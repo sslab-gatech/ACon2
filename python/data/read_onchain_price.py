@@ -15,7 +15,7 @@ def find_block(w3, timestamp):
     block_start = w3.eth.get_block('earliest')
     block_end = w3.eth.get_block('latest')    
 
-    assert(block_end.number != block_start.number)
+    assert block_end.number != block_start.number, f'block_start.number = {block_start.number} == block_end.number = {block_end.number}'
     assert block_start.timestamp < timestamp < block_end.timestamp, f'{block_start.timestamp} < {timestamp} < {block_end.timestamp}'
     
     # binary search
@@ -84,7 +84,7 @@ def get_spot_price_UniswapV2(args):
     for block_number in range(block_start.number, block_end.number+1):
         t = time.time()
         price = get_price(w3, factory, block_number, token0_addr=tokenname2addr(args.token0), token1_addr=tokenname2addr(args.token1))
-        print(f'[running time = {time.time() - t}] price = {price}')
+        print(f"[running time = {time.time() - t}, {np.array(w3.eth.get_block(block_number).timestamp, dtype='datetime64[s]')}] price = {price}")
     
     sys.exit()
         
@@ -100,9 +100,12 @@ if __name__ == '__main__':
     # parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
     parser.add_argument('--market_name', type=str, default='UniswapV2')
     parser.add_argument('--token0', type=str, default='WETH')
-    parser.add_argument('--token1', type=str, default='INV')
-    parser.add_argument('--time_start', type=str, default='2022-01-01T00:00')
-    parser.add_argument('--time_end', type=str, default='2022-07-31T23:59')
+    parser.add_argument('--token1', type=str, default='DAI')
+    # parser.add_argument('--time_start', type=str, default='2022-01-01T00:00')
+    # parser.add_argument('--time_end', type=str, default='2022-07-31T23:59')
+    parser.add_argument('--time_start', type=str, default='2021-01-01T00:00')
+    parser.add_argument('--time_end', type=str, default='2021-12-31T23:59')
+
     parser.add_argument('--time_interval_sec', type=float, default=60)
     # parser.add_argument('--seed', type=int, default=None)
     # parser.add_argument('--output_dir', type=str, default='output')
