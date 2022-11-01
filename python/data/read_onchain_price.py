@@ -1,5 +1,6 @@
 import os, sys
-from web3 import Web3
+import web3 
+import argparse
 
 # import subprocess
 import json
@@ -11,45 +12,118 @@ import pickle
 
 
 def find_block(w3, timestamp):
-    print(timestamp)
+
+    block_start = w3.eth.get_block('earliest')
+    block_end = w3.eth.get_block('latest')    
+
+    assert block_end.number != block_start.number, f'block_start.number = {block_start.number} == block_end.number = {block_end.number}'
+    assert block_start.timestamp < timestamp < block_end.timestamp, f'{block_start.timestamp} < {timestamp} < {block_end.timestamp}'
     
-    block = w3.eth.get_block('latest')
-    print(block.timestmap)
-    print(block.block_number)
-    
-    assert(timestamp < block.timestamp)
-    # linear search
+    # binary search
     while True:
-        if timestamp >= block.timestamp:
+        block_number_mid = (block_start.number + block_end.number) // 2
+        block_mid = w3.eth.get_block(block_number_mid)
+
+        # print(block_start.timestamp, block_end.timestamp, timestamp)
+        
+        if timestamp < block_mid.timestamp:
+            block_end = block_mid
+        else:
+            block_start = block_mid
+        
+        if block_end.number - block_start.number <= 1:
+            block_final = block_end
             break
 
-        block = w3.eth.get_block(block.block_number - 1)
+    return block_final
 
-    return block
-            
-    
-def get_spot_price_UniswapV2(args, pair0, pair1, time_start, time_end, time_step_sec):
+
+def get_price(w3, factory, block_number, token0_addr, token1_addr):
+    pair_addr = factory.functions.getPair(token0_addr, token1_addr).call(block_identifier=block_number)
+    pair = w3.eth.contract(pair_addr, abi=open('abi/abi_uniswap_v2_pair.json').read())
+    reserve0, reserve1, _ = pair.functions.getReserves().call(block_identifier=block_number)
+
+    token0_addr_pair = pair.functions.token0().call(block_identifier=block_number)
+    token1_addr_pair = pair.functions.token1().call(block_identifier=block_number)
+
+    if token0_addr_pair == token0_addr and token1_addr_pair == token1_addr:
+        price = reserve1 / reserve0
+    else:
+        assert(token1_addr_pair == token0_addr and token0_addr_pair == token1_addr)
+        price = reserve0 / reserve1
+
+    return price
+
+
+def tokenname2addr(token_name):
+    if token_name == 'INV':
+        return '0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68'
+    elif token_name == 'WETH':
+        return '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+    elif token_name == 'DAI':
+        return '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+    else:
+        raise NotImplementedError
+
+
+def get_spot_price_UniswapV2(args):
+    root = f'price_{args.token0}_{args.token1}_start_{str(args.time_start).replace(" ", "_")}_end_{str(args.time_end).replace(" ", "_")}_step_sec_{args.time_interval_sec}'
+    os.makedirs(root, exist_ok=True)
+
     w3 = web3.Web3(web3.Web3.HTTPProvider(args.provider_url))
-    assert(w3.isConnected())
+    #w3 = web3.Web3(web3.Web3.IPCProvider(args.provider_url))
+    # w3 = web3.Web3(web3.Web3.WebsocketProvider(args.provider_url))
+    assert w3.isConnected(), f'connection status: {w3.isConnected()}'
 
-    block_start = find_block(w3, time_start.astype('datetime64[s]'))
-    block_end = find_block(w3, time_end.astype('datetime64[s]'))
+    # find blocks
+    block_start = find_block(w3, np.datetime64(args.time_start, 's').astype('uint'))
+    block_end = find_block(w3, np.datetime64(args.time_end, 's').astype('uint'))
+    print(f"block start time = {np.array(block_start.timestamp, dtype='datetime64[s]')}, block end time = {np.array(block_end.timestamp, dtype='datetime64[s]')}")
 
-    sys.exit()
+    # UniswapV2 factory
+    factory_addr = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'
+    factory = w3.eth.contract(factory_addr, abi=open('abi/abi_uniswap_v2_factory.json').read())
+
+    # read price
+    data = []
+    fn_data = os.path.join(root, 'UniswapV2_spot_price.pk')
+    if os.path.exists(fn_data):
+        data = pickle.load(open(fn_data, "rb"))
+        set_block_numbers = set([d['block_number'] for d in data])
+    else:
+        set_block_numbers = set()
+
         
+    for block_number in range(block_start.number, block_end.number+1):
+        if block_number in set_block_numbers:
+            continue
+        t = time.time()
+        price = get_price(w3, factory, block_number, token0_addr=tokenname2addr(args.token0), token1_addr=tokenname2addr(args.token1))
+        block_time = np.array(w3.eth.get_block(block_number).timestamp, dtype='datetime64[s]')
+        print(f"[running time = {time.time() - t}, {block_time}] price = {price}")
+        d = {'time': block_time, 'price': price, 'block_number': block_number}
+        data.append(d)
+        
+        pickle.dump(data, open(fn_data, 'wb'))
+
     
     
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='price reader')
     parser.add_argument('--provider_url', type=str, default='https://eth-mainnet.alchemyapi.io/v2/TeK8vT24gEP564FbC7Z2GPHQCOMDA8wb')
+    #parser.add_argument('--provider_url', type=str, default='http://localhost:9000')
+
     # parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     # parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
     parser.add_argument('--market_name', type=str, default='UniswapV2')
-    parser.add_argument('--pair0', type=str, default='INV')
-    parser.add_argument('--pair1', type=str, default='ETH')
-    parser.add_argument('--time_start', type=str, default='2022-01-01T00:00')
-    parser.add_argument('--time_end', type=str, default='2022-07-31T23:59')
+    parser.add_argument('--token0', type=str, default='WETH')
+    parser.add_argument('--token1', type=str, default='DAI')
+    # parser.add_argument('--time_start', type=str, default='2022-01-01T00:00')
+    # parser.add_argument('--time_end', type=str, default='2022-07-31T23:59')
+    parser.add_argument('--time_start', type=str, default='2021-01-01T00:00')
+    parser.add_argument('--time_end', type=str, default='2021-12-31T23:59')
+
     parser.add_argument('--time_interval_sec', type=float, default=60)
     # parser.add_argument('--seed', type=int, default=None)
     # parser.add_argument('--output_dir', type=str, default='output')
@@ -70,12 +144,9 @@ if __name__ == '__main__':
     # time_end = datetime(2022, 7, 31, 23, 59, 0, 0)
     # time_step_sec = 60
 
-    root = f'price_{pair0}_{pair1}_start_{str(time_start).replace(" ", "_")}_end_{str(time_end).replace(" ", "_")}_step_sec_{time_step_sec}'
-    os.makedirs(root, exist_ok=True)
 
-    if market == 'UniswapV2':
+    if args.market_name == 'UniswapV2':
         data = get_spot_price_UniswapV2(args)
-        pickle.dump(data, open(os.path.join(root, 'UniswapV2_spot_price.pk'), 'wb'))
         
     elif market == 'SushiSwap':
         raise NotImplementedError
