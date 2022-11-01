@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.dates as md
 
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 
 if __name__ == '__main__':
 
@@ -16,6 +17,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='online learning')
     parser.add_argument('--exp_name', type=str, default='single_source_INV_ETH_SushiSwap')
     parser.add_argument('--output_root', type=str, default='output')
+    parser.add_argument('--ours_name', type=str, default='ACon$^2$')
     parser.add_argument('--fig_root', type=str, default='figs')
     parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
     parser.add_argument('--fontsize', type=int, default=15)
@@ -23,6 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_data_max', type=int, default=np.inf)
     parser.add_argument('--y_min', type=float)
     parser.add_argument('--y_max', type=float)
+    parser.add_argument('--step', type=int, default=1)
     parser.add_argument('--y_max_mc', type=float)
     parser.add_argument('--log_scale', action='store_true')
     parser.add_argument('--tag', type=str)
@@ -128,9 +131,34 @@ if __name__ == '__main__':
         hs = []
         plt.figure(1)
         plt.clf()
+        fig, ax = plt.subplots()
 
+        # ----- an inset
+        inset_zoom_start_index = int(1.8*len(time)//3) - 100
+        inset_zoom_end_index = int(1.8*len(time)//3) + 100
+        time_inset = time[inset_zoom_start_index:inset_zoom_end_index]
+        itv_max_inset = itv_max[inset_zoom_start_index:inset_zoom_end_index]
+        itv_min_inset = itv_min[inset_zoom_start_index:inset_zoom_end_index]
+        ax_inset = ax.inset_axes([0.03, 0.5, 0.47, 0.47])
+        
         # prediction set
-        h = plt.fill_between(time, itv_max, itv_min, color='green', alpha=0.4, label='ACC')
+        ax_inset.fill_between(time_inset, itv_max_inset, itv_min_inset, color='green', alpha=0.4, label=args.ours_name)
+        
+        # observations
+        for i, k in enumerate(key):
+            price_i = [p[i] for p in price]
+            t_i = [t for j, t in enumerate(time) if price_i[j] is not None]
+            p_i = [p for j, p in enumerate(price_i) if price_i[j] is not None]
+            h = ax_inset.plot(
+                t_i[inset_zoom_start_index:inset_zoom_end_index],
+                p_i[inset_zoom_start_index:inset_zoom_end_index],
+                label=market_names[i], linewidth=1.0, color=color_list[i])
+        
+
+        # ----- the original plot
+        
+        # prediction set
+        h = plt.fill_between(time[::args.step], itv_max[::args.step], itv_min[::args.step], color='green', alpha=0.4, label=args.ours_name)
         hs.append(h)
 
         
@@ -139,10 +167,9 @@ if __name__ == '__main__':
             price_i = [p[i] for p in price]
             t_i = [t for j, t in enumerate(time) if price_i[j] is not None]
             p_i = [p for j, p in enumerate(price_i) if price_i[j] is not None]
-            h = plt.plot(t_i, p_i, label=market_names[i], linewidth=1.0, color=color_list[i])
+            h = plt.plot(t_i[::args.step], p_i[::args.step], label=market_names[i], linewidth=1.0, color=color_list[i])
             hs.append(h[0])
-            
-        
+
         # beautify
         plt.gca().xaxis.set_major_formatter(md.DateFormatter('%Y-%m-%d %H:%M'))
         plt.xticks( rotation=20 )
@@ -155,6 +182,12 @@ if __name__ == '__main__':
         plt.ylabel(f'price ({price_name})', fontsize=args.fontsize)
         plt.grid('on')
         plt.legend(handles=hs, fontsize=args.fontsize)
+
+        # beautify an inset
+        ax_inset.set_xticks([], [])
+        ax_inset.set_yticks([], []) 
+        ax.indicate_inset_zoom(ax_inset, edgecolor="black")
+        
         plt.savefig(fn_out+'.png', bbox_inches='tight')
         pdf.savefig(bbox_inches='tight')
         print(fn_out)
@@ -178,7 +211,7 @@ if __name__ == '__main__':
         hs.append(h)
 
         # miscoverage
-        h = plt.plot(miscoverage, '-', color='C2', label='ACC')
+        h = plt.plot(miscoverage, '-', color='C2', label=args.ours_name)
         hs.append(h[0])
 
         # miscoverage rate of bases
@@ -186,7 +219,7 @@ if __name__ == '__main__':
             src_name = k.split('/')[-1]
             # miscoverage
             m = [e[k]/n[k] for e, n in zip(n_err_base, n_obs_base)]
-            h = plt.plot(m, '-', color=color_list[i], label=r'$BPS_{%s}$'%(src_name))
+            h = plt.plot(m[::args.step], '-', color=color_list[i], label=r'$BPS_{%s}$'%(src_name))
             hs.append(h[0])
             
         

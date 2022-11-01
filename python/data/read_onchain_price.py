@@ -9,6 +9,7 @@ import numpy as np
 from multiprocessing import Process, Manager
 import pickle
 
+
 def find_block(w3, timestamp):
     print(timestamp)
     
