@@ -1,1 +1,1 @@
-from data.price import PriceDataset, RandomPriceDataset, ZeroPriceDataset
+from data.price import SinglePriceDataset, PriceDataset, RandomPriceDataset, ZeroPriceDataset

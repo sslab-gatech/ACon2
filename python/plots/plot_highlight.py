@@ -9,33 +9,35 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.dates as md
 
+import data
+
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 
 if __name__ == '__main__':
 
     ## init a parser
     parser = argparse.ArgumentParser(description='online learning')
-    parser.add_argument('--exp_name', type=str, default='single_source_INV_ETH_SushiSwap')
+    parser.add_argument('--exp_name', type=str, default='three_sources_INV_ETH_SushiSwap_UniswapV2_coinbase_K_3_beta_1')
+    parser.add_argument('--TWAP_data', type=str, default='data/price_ETH_INV/Keep3rV2SushiSwap')
     parser.add_argument('--output_root', type=str, default='output')
-    parser.add_argument('--ours_name', type=str, default='ACon$^2$')
+    parser.add_argument('--ours_name', type=str, default='ACon$^2$ (ours)')
     parser.add_argument('--fig_root', type=str, default='figs')
     parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
     parser.add_argument('--fontsize', type=int, default=15)
-    parser.add_argument('--time_start', type=str)
+    parser.add_argument('--time_start', type=str, default='2022-04-02T11:03')
     parser.add_argument('--num_data_max', type=int, default=np.inf)
-    parser.add_argument('--y_min', type=float)
-    parser.add_argument('--y_max', type=float)
+    parser.add_argument('--y_min', type=float, default=0)
+    parser.add_argument('--y_max', type=float, default=10)
     parser.add_argument('--step', type=int, default=1)
-    parser.add_argument('--y_max_mc', type=float)
     parser.add_argument('--log_scale', action='store_true')
     parser.add_argument('--tag', type=str)
     parser.add_argument('--zoom_start_index', type=int, default=0)
-    parser.add_argument('--zoom_end_index', type=int, default=np.inf)
+    parser.add_argument('--zoom_end_index', type=int, default=10)
     parser.add_argument('--show_base_ps', action='store_true')
     args = parser.parse_args()
     #color_list = ['C3', 'C4', 'C8', 'C9']
     color_list = ['r', 'b', 'gold', 'C9']
-    max_val = 1e4
+    max_val = 20
     
     # read outputs
     outputs = pickle.load(open(os.path.join(args.output_root, args.exp_name, 'out.pk'), 'rb'))
@@ -43,8 +45,7 @@ if __name__ == '__main__':
     results = outputs['results']
 
     # init
-    fn_out = os.path.join(args.output_root, args.exp_name, args.fig_root, f'plot_ps{"_" if args.tag else ""}{args.tag if args.tag else ""}')
-    fn_out_miscoverage = os.path.join(args.output_root, args.exp_name, args.fig_root, f'plot_miscoverage{"_" if args.tag else ""}{args.tag if args.tag else ""}')
+    fn_out = os.path.join(args.output_root, 'highlight', args.fig_root, f'plot_ps{"_" if args.tag else ""}{args.tag if args.tag else ""}')
 
     os.makedirs(os.path.dirname(fn_out), exist_ok=True)
     key = exp_args.data.path
@@ -67,16 +68,18 @@ if __name__ == '__main__':
     # else:
     #     print(results[0]['observation'])
     price = [[r['observation'][k] for k in key] for r in results]
-    n_err = [r['prediction_summary']['n_err'] for r in results]
-    n_obs = [r['prediction_summary']['n_obs'] for r in results]
-    n_err_base = [r['prediction_summary']['n_err_base'] for r in results]
-    n_obs_base = [r['prediction_summary']['n_obs_base'] for r in results]
 
     itv_min = [max(0, r['prediction_summary']['ps_updated'][0]) for r in results]
     itv_max = [min(max_val, r['prediction_summary']['ps_updated'][1]) for r in results]
     if args.show_base_ps:
         itv_bps = [r['prediction_summary']['base_ps']  for r in results]
-        
+
+    # read TWAP results
+    ds_TWAP = data.SinglePriceDataset(args.TWAP_data)
+    price_TWAP = []
+    for t in time:
+        price_TWAP.append(1/ds_TWAP.read(t.astype(int)))
+    price_TWAP = np.array(price_TWAP)
     
     args.num_data_max = min(args.num_data_max, len(time))
     if args.time_start:
@@ -89,28 +92,24 @@ if __name__ == '__main__':
         data_start_index = 0
     time = time[data_start_index:args.num_data_max]
     price = price[data_start_index:args.num_data_max]
+    price_TWAP = price_TWAP[data_start_index:args.num_data_max]
+    
     itv_min = itv_min[data_start_index:args.num_data_max]
     itv_max = itv_max[data_start_index:args.num_data_max]
     if args.show_base_ps:
         itv_bps = itv_bps[data_start_index:args.num_data_max]
-    n_err = n_err[data_start_index:args.num_data_max]
-    n_obs = n_obs[data_start_index:args.num_data_max]
-    n_err_base = n_err_base[data_start_index:args.num_data_max]
-    n_obs_base = n_obs_base[data_start_index:args.num_data_max]
         
     
     if args.zoom_end_index == np.inf:
         args.zoom_end_index = len(time)
     time = time[args.zoom_start_index:args.zoom_end_index]
     price = price[args.zoom_start_index:args.zoom_end_index]
+    price_TWAP = price_TWAP[args.zoom_start_index:args.zoom_end_index]
+
     itv_min = itv_min[args.zoom_start_index:args.zoom_end_index]
     itv_max = itv_max[args.zoom_start_index:args.zoom_end_index]
     if args.show_base_ps:
         itv_bps = itv_bps[args.zoom_start_index:args.zoom_end_index]
-    n_err = n_err[args.zoom_start_index:args.zoom_end_index]
-    n_obs = n_obs[args.zoom_start_index:args.zoom_end_index]
-    n_err_base = n_err_base[args.zoom_start_index:args.zoom_end_index]
-    n_obs_base = n_obs_base[args.zoom_start_index:args.zoom_end_index]
 
     if args.show_base_ps:
         data_table = {}
@@ -134,50 +133,32 @@ if __name__ == '__main__':
         plt.clf()
         fig, ax = plt.subplots()
 
-        # ----- an inset
-        inset_zoom_start_index = int(1.8*len(time)//3) - 100
-        inset_zoom_end_index = int(1.8*len(time)//3) + 100
-        time_inset = time[inset_zoom_start_index:inset_zoom_end_index]
-        itv_max_inset = itv_max[inset_zoom_start_index:inset_zoom_end_index]
-        itv_min_inset = itv_min[inset_zoom_start_index:inset_zoom_end_index]
-
-        itv_mean_inset = np.mean(np.array([p[0] for p in price])[inset_zoom_start_index:inset_zoom_end_index]) # heuristic
-        itv_max_inset = np.minimum(itv_mean_inset + 100, itv_max_inset)
-        itv_min_inset = np.maximum(itv_mean_inset - 100, itv_min_inset)
-        
-        ax_inset = ax.inset_axes([0.03, 0.5, 0.47, 0.47]) # location of the inset within the original plot
-        
-        # prediction set
-        ax_inset.fill_between(time_inset, itv_max_inset, itv_min_inset, color='green', alpha=0.4, label=args.ours_name)
-        
-        # observations
-        for i, k in enumerate(key):
-            price_i = [p[i] for p in price]
-            t_i = [t for j, t in enumerate(time) if price_i[j] is not None]
-            p_i = [p for j, p in enumerate(price_i) if price_i[j] is not None]
-            h = ax_inset.plot(
-                t_i[inset_zoom_start_index:inset_zoom_end_index],
-                p_i[inset_zoom_start_index:inset_zoom_end_index],
-                label=market_names[i], linewidth=1.0, color=color_list[i])
-        
-
-        # ----- the original plot
-        
         # prediction set
         h = plt.fill_between(time[::args.step], itv_max[::args.step], itv_min[::args.step], color='green', alpha=0.4, label=args.ours_name)
         hs.append(h)
-
+        print(itv_max)
         
         # observations
+        price_obs = []
         for i, k in enumerate(key):
             price_i = [p[i] for p in price]
+            price_obs.append(price_i)
             t_i = [t for j, t in enumerate(time) if price_i[j] is not None]
             p_i = [p for j, p in enumerate(price_i) if price_i[j] is not None]
-            h = plt.plot(t_i[::args.step], p_i[::args.step], label=market_names[i], linewidth=1.0, color=color_list[i])
+            h = plt.plot(t_i[::args.step], p_i[::args.step], marker='s', label=market_names[i], linewidth=1.0, color=color_list[i])
             hs.append(h[0])
 
+        # median
+        price_median = np.median(np.array(price_obs), 0)
+        h = plt.plot(t_i[::args.step], price_median[::args.step], 'k-', label='median', linewidth=2.0)
+        hs.append(h[0])
+
+        #TWAP
+        h = plt.plot(t_i[::args.step], price_TWAP[::args.step], 'k--', label='TWAP (Keep3rV2)', linewidth=2.0)
+        hs.append(h[0])
+        
         # beautify
-        plt.gca().xaxis.set_major_formatter(md.DateFormatter('%Y-%m-%d %H:%M'))
+        plt.gca().xaxis.set_major_formatter(md.DateFormatter('%Y-%m-%d %H:%M:%S'))
         plt.xticks( rotation=20 )
         ymin = np.min(price) * 0.5 if args.y_min is None else args.y_min
         ymax = np.max(price) * 2 if args.y_max is None else args.y_max
@@ -187,58 +168,9 @@ if __name__ == '__main__':
         plt.xlabel('time', fontsize=args.fontsize)
         plt.ylabel(f'price ({price_name})', fontsize=args.fontsize)
         plt.grid('on')
-        plt.legend(handles=hs, fontsize=args.fontsize, loc='upper right')
+        plt.legend(handles=hs, fontsize=args.fontsize)
 
-        # beautify an inset
-        ax_inset.set_xticks([], [])
-        ax_inset.set_yticks([], []) 
-        ax.indicate_inset_zoom(ax_inset, edgecolor="black")
-        
         plt.savefig(fn_out+'.png', bbox_inches='tight')
         pdf.savefig(bbox_inches='tight')
         print(fn_out)
 
-    # plot the miscoverage rate
-    with PdfPages(fn_out_miscoverage + '.pdf') as pdf:
-        hs = []
-        plt.figure(1)
-        plt.clf()
-
-        miscoverage = [e/n for e, n in zip(n_err, n_obs)]
-        i_obs = np.arange(len(miscoverage))
-
-        y_max = min(np.max(miscoverage)*1.5, 1.5*alpha)
-
-        # a desired miscoverage
-        h = plt.hlines(alpha, 0, len(miscoverage), colors='k', linestyles='solid', label=r'$\alpha = %.3f$'%(alpha))
-        hs.append(h)
-        
-        # a desired miscoverage
-        assert(all(alpha_base[0] == np.array(alpha_base)))
-        h = plt.hlines(alpha_base[0], 0, len(miscoverage), colors='k', linestyles='dashed', label=r'$\alpha_{base} = %.3f$'%(alpha_base[0]))
-        hs.append(h)
-
-        # miscoverage rate of bases
-        for i, k in enumerate(n_err_base[0].keys()):
-            src_name = k.split('/')[-1]
-            # miscoverage
-            m = [e[k]/n[k] for e, n in zip(n_err_base, n_obs_base)]
-            x = np.arange(len(m))
-            h = plt.plot(i_obs, m, '-', color=color_list[i], label=r'$BPS_{%s}$'%(src_name))
-            hs.append(h[0])
-            
-        # miscoverage
-        h = plt.plot(i_obs, miscoverage, '-', color='C2', label=args.ours_name)
-        hs.append(h[0])
-        
-        # beautify
-        plt.xlabel('# observations', fontsize=args.fontsize)
-        plt.ylabel(f'miscoverage rate', fontsize=args.fontsize)
-        plt.grid('on')
-        plt.xticks(fontsize=args.fontsize*0.75)
-        plt.yticks(fontsize=args.fontsize*0.75)
-        plt.ylim([0, args.y_max_mc if args.y_max_mc else alpha*1.5])
-        plt.legend(handles=hs, fontsize=args.fontsize)
-        plt.savefig(fn_out_miscoverage+'.png', bbox_inches='tight')
-        pdf.savefig(bbox_inches='tight')
-        print(fn_out_miscoverage)
