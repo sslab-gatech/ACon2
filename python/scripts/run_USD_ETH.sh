@@ -34,5 +34,6 @@ python3.7 main.py \
 	  --exp_name three_sources_OneSigma_USD_ETH_UniswapV2_coinbase_binance \
 	  --data.path data/price_USD_ETH/UniswapV2 data/price_USD_ETH/coinbase data/price_USD_ETH/binance \
 	  --model_ps.name OneSigma OneSigma OneSigma \
+	  --model_ps.alpha 0.00333 0.00333 0.00333 \
 	  --model_ps.beta 1
 "
