@@ -29,6 +29,8 @@ if __name__ == '__main__':
     parser.add_argument('--zoom_start_index', type=int, default=0)
     parser.add_argument('--zoom_end_index', type=int, default=np.inf)
     parser.add_argument('--show_base_ps', action='store_true')
+    parser.add_argument('--no_ours', action='store_true')
+
     args = parser.parse_args()
     color_list = ['C3', 'C4', 'C8', 'C9']
     max_val = 1e4

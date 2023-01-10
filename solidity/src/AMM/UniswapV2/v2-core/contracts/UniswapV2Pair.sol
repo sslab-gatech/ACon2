@@ -65,7 +65,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
 
     constructor() {
         factory = msg.sender;
-	basePS = new SpecialMVP(0.01 * 10**18, 100, 0.9 * 10**18); //TODO: good beta? 0.9 or 0.1?
+	// alpha, numOfBins, initEta
+	basePS = new SpecialMVP(0.01 * 10**18, 100, 0.9 * 10**18);
     }
 
     // called once by the factory at time of deployment
