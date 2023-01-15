@@ -1,6 +1,6 @@
-ALPHA=0d01
+ALPHA=0d03
 DURATION=1800
-for i in {1..10}
+for i in {10..10}
 do
     echo "run miners"
     screen -S miners -dm bash -c "./script/run_node.sh"
@@ -13,6 +13,7 @@ do
     sleep $DURATION
     screen -X -S miners quit
     screen -X -S adv quit
+    rm /tmp/.tmp* -rf
 done
 
 

@@ -52,6 +52,7 @@ class ACCReader:
                 name: check_WETH_DAI_pair(self.w3.eth, market, self.WETH_addr, self.DAI_addr)
                 for name, market in self.market_contracts.items()}
             prices = [v for v in name_prices.values()]
+            prices_str = ",".join([f'{v:.4f}' for v in prices])
             pseudo_label = np.median(prices)
             
             n_obs += 1
@@ -72,7 +73,7 @@ class ACCReader:
                 'miscoverage': n_err / n_obs,
             })
 
-            print(f'[ACC] beta = {beta}, n_sources = {n_sources}, median(price) = {np.median(prices):.4f}, '
+            print(f'[ACC] beta = {beta}, n_sources = {n_sources}, price = {prices_str}, median(price) = {np.median(prices):.4f}, '
                   f'price interval = ({lower_interval:.4f}, {upper_interval:.4f}), length = {upper_interval - lower_interval:.4f}, '
                   f'error_cons = {n_err_cons / n_obs:.4f}, error = {n_err / n_obs:.4f}'
             )
@@ -87,7 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('--private_key', type=str, default='0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6')
     parser.add_argument('--market_names', type=str, nargs='+', default=['AMM1', 'AMM2', 'AMM3'])
     parser.add_argument('--beta', type=int, default=1)
-    parser.add_argument('--time_interval_sec', type=int, default=0.1)
+    parser.add_argument('--time_interval_sec', type=int, default=0)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)

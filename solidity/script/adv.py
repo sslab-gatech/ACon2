@@ -32,7 +32,7 @@ class Adversary(Trader):
             
             
             # always sell ETH
-            ETH_amount = int(10 * 1e18)
+            ETH_amount = int(100 * 1e18)
             self.swap_ETHforDAI(market_contracts, ETH_amount)
 
             print(f'[{market_name}] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '

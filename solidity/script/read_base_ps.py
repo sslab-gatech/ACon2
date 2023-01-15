@@ -25,17 +25,17 @@ class PSReader:
         # self.nonce = self.w3.eth.getTransactionCount(self.address)
         
         #TODO: assume that UniswapV2-style AMMs are used
-        if args.market_name == 'AMM1':
+        if 'AMM' in args.market_name:
             router02_addr = json.loads(open(os.path.join(self.args.output_dir, f'{args.market_name.lower()}_router.json')).read())['deployedTo']
             factory_addr = json.loads(open(os.path.join(self.args.output_dir, f'{args.market_name.lower()}_factory.json')).read())['deployedTo']
             self.router02 = self.w3.eth.contract(router02_addr, abi=open('out/IUniswapV2Router02.sol/IUniswapV2Router02.abi.json').read())
             self.factory = self.w3.eth.contract(factory_addr, abi=open('out/IUniswapV2Factory.sol/IUniswapV2Factory.abi.json').read())
 
-        elif args.market_name == 'AMM2':
-            router02_addr = json.loads(open(os.path.join(self.args.output_dir, f'{args.market_name.lower()}_router.json')).read())['deployedTo']
-            factory_addr = json.loads(open(os.path.join(self.args.output_dir, f'{args.market_name.lower()}_factory.json')).read())['deployedTo']
-            self.router02 = self.w3.eth.contract(router02_addr, abi=open('out/IUniswapV2Router02.sol/IUniswapV2Router02.abi.json').read())
-            self.factory = self.w3.eth.contract(factory_addr, abi=open('out/IUniswapV2Factory.sol/IUniswapV2Factory.abi.json').read())
+        # elif args.market_name == 'AMM2':
+        #     router02_addr = json.loads(open(os.path.join(self.args.output_dir, f'{args.market_name.lower()}_router.json')).read())['deployedTo']
+        #     factory_addr = json.loads(open(os.path.join(self.args.output_dir, f'{args.market_name.lower()}_factory.json')).read())['deployedTo']
+        #     self.router02 = self.w3.eth.contract(router02_addr, abi=open('out/IUniswapV2Router02.sol/IUniswapV2Router02.abi.json').read())
+        #     self.factory = self.w3.eth.contract(factory_addr, abi=open('out/IUniswapV2Factory.sol/IUniswapV2Factory.abi.json').read())
 
         else:
             raise NotImplementedError
