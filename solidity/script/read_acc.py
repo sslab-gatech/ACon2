@@ -37,36 +37,44 @@ class ACCReader:
         data_fn = os.path.join(self.args.output_dir, self.args.exp_name, 'data.pk')
         os.makedirs(os.path.dirname(data_fn), exist_ok=True)
         n_err = 0
+        n_err_cons = 0
         n_obs = 0
         
         while True:
             beta = self.acc.functions.getBeta().call()
             n_sources = self.acc.functions.getSources().call()
-            lower_interval, upper_interval = self.acc.functions.predict().call()
+            lower_interval, upper_interval, lower_intervals, upper_intervals = self.acc.functions.predict().call()
             lower_interval = lower_interval / 10**18
             upper_interval = upper_interval / 10**18
+            base_intervals = [[l / 10**18, u / 10**18] for l, u in zip(lower_intervals, upper_intervals)]
 
             name_prices = {
                 name: check_WETH_DAI_pair(self.w3.eth, market, self.WETH_addr, self.DAI_addr)
                 for name, market in self.market_contracts.items()}
             prices = [v for v in name_prices.values()]
+            pseudo_label = np.median(prices)
             
             n_obs += 1
-            if not(np.median(prices) >= lower_interval and np.median(prices) <= upper_interval):
-                n_err += 1
+            if not(pseudo_label >= lower_interval and pseudo_label <= upper_interval):
+                n_err_cons += 1
 
+            cover = [1 if l <= pseudo_label and pseudo_label <= u else 0 for l, u in base_intervals]
+            if np.sum(cover) < n_sources - beta:
+                n_err += 1
+            
             data.append({
                 'prices': prices,
                 'market_names': [k for k in name_prices.keys()],
                 'beta': beta,
                 'n_sources': n_sources,
                 'interval': [lower_interval, upper_interval],
+                'miscoverage_cons': n_err_cons / n_obs,
                 'miscoverage': n_err / n_obs,
             })
 
             print(f'[ACC] beta = {beta}, n_sources = {n_sources}, median(price) = {np.median(prices):.4f}, '
                   f'price interval = ({lower_interval:.4f}, {upper_interval:.4f}), length = {upper_interval - lower_interval:.4f}, '
-                  f'error = {n_err / n_obs:.4f}'
+                  f'error_cons = {n_err_cons / n_obs:.4f}, error = {n_err / n_obs:.4f}'
             )
             pickle.dump(data, open(data_fn, 'wb'))
             time.sleep(self.args.time_interval_sec)

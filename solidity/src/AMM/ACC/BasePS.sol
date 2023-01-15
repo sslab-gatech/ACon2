@@ -146,8 +146,9 @@ contract SpecialMVP is IBasePS {
     int256[] private _thresCount;
     int256 private _r = 1000 * PRBMathSD59x18.scale();
 
-    int256 public n_err;
-    int256 public n_obs;
+    int256 public _obs;
+    int256 public _n_err;
+    int256 public _n_obs;
     
 
     constructor(int256 alpha, uint numOfBins, int256 initEta) {
@@ -159,8 +160,9 @@ contract SpecialMVP is IBasePS {
 	_eta = initEta;
 	_corrWeight = new int256[](_numOfBins);
 	_thresCount = new int256[](_numOfBins);
-	n_err = 0;
-	n_obs = 0;
+	_obs = 0;
+	_n_err = 0;
+	_n_obs = 0;
     }
 
     
@@ -262,12 +264,13 @@ contract SpecialMVP is IBasePS {
     }
 
     function getMeanMiscoverage() public view returns (int256 m) {
-	m = n_err.div(n_obs);
+	m = _n_err.div(_n_obs);
     }
 
     function update(uint reserve0, uint reserve1) public returns(int256 threshold) {
-	int256 price = int256(reserve0).div(int256(reserve1));
-	threshold = update(price);
+	int256 obs = int256(reserve0).div(int256(reserve1));
+	_obs = obs;
+	threshold = update(obs);
     }
 
     function _updateState(uint reserve0, uint reserve1) public {
@@ -280,8 +283,8 @@ contract SpecialMVP is IBasePS {
 	}
 
 	int256 miscov = miscoverage(obs);
-	n_err = n_err + miscov;
-	n_obs = n_obs + 1 * _scale();
+	_n_err = _n_err + miscov;
+	_n_obs = _n_obs + 1 * _scale();
 	
 	_thresCount[binIdx] += 1 * _scale();
 	_corrWeight[binIdx] += (_alpha - miscov);
@@ -305,8 +308,8 @@ contract SpecialMVP is IBasePS {
 	}
 
 	int256 miscov = miscoverage(obs);
-	n_err = n_err + miscov;
-	n_obs = n_obs + 1 * _scale();
+	_n_err = _n_err + miscov;
+	_n_obs = _n_obs + 1 * _scale();
 	
 	_thresCount[binIdx] += 1 * _scale();
 	_corrWeight[binIdx] += (_alpha - miscov);

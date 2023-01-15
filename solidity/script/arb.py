@@ -249,18 +249,6 @@ class Arbitrageur:
                 self.args.min_benefit_DAI
             )
 
-            # # check the arbitrage oppertunity
-            # if dai_price_market0 - dai_price_market1 >= self.args.min_benefit_DAI:
-            #     #arb_amount_DAI = int((dai_price_market0 - dai_price_market1) * 1e18 * 0.5)  #TODO: heuristic
-            #     arb_amount_DAI = int(1 * 1e18)
-            #     self.arbitrage(self.markets[market_name0], self.markets[market_name1], arb_amount_DAI)
-            # elif dai_price_market1 - dai_price_market0 >= self.args.min_benefit_DAI:
-            #     arb_amount_DAI = int(1 * 1e18)
-            #     # arb_amount_DAI = int((dai_price_market1 - dai_price_market0) * 1e18 * 0.5) #TODO: heuristic
-            #     self.arbitrage(self.markets[market_name1], self.markets[market_name0], arb_amount_DAI)
-            # else:
-            #     pass
-                        
             time.sleep(self.args.time_interval_sec)
 
 
@@ -271,12 +259,12 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
     parser.add_argument('--markets', type=str, nargs='+', default=['UniswapV2', 'SushiSwap'])
-    parser.add_argument('--time_interval_sec', type=int, default=0.1)
+    parser.add_argument('--time_interval_sec', type=int, default=0)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)
     #parser.add_argument('--min_benefit_WETH', type=int, default=1e10)
-    parser.add_argument('--min_benefit_DAI', type=int, default=0.01)
+    parser.add_argument('--min_benefit_DAI', type=int, default=0.001)
     #parser.add_argument('--arb_amount_DAI', type=int, default=0.1*1e18)
     args = parser.parse_args()
     assert(len(args.markets) >= 2)
