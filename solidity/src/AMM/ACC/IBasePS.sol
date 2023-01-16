@@ -20,6 +20,9 @@ interface IBasePS {
     function getNoise() external view returns(int256 stateNoiseVar, int256 obsNoiseVar);
     function getMeanMiscoverage() external view returns (int256 m);
 
+    function setAlpha(int256 new_alpha) external;
+    function getAlpha() external view returns (int256 alphaOut);
+
     //DBG
     function _rand() external view returns (uint256 p);
 

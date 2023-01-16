@@ -66,8 +66,9 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     constructor() {
         factory = msg.sender;
 	// alpha, numOfBins, initEta
-	basePS = new SpecialMVP(0.01 * 10**18, 100, 0.9 * 10**18);
+	basePS = new SpecialMVP(0.01 * 10**18, 100, 0.9 * 10**18); //TODO: change via function calls
 	//basePS = new SpecialMVP(0.1 * 10**18, 100, 0.9 * 10**18);
+	//basePS = new SpecialMVP(0.001 * 10**18, 100, 0.9 * 10**18);
     }
 
     // called once by the factory at time of deployment
@@ -214,6 +215,15 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     function getMeanMiscoverage() external view returns (int256 m) {
 	return basePS.getMeanMiscoverage();
     }
+
+    function setAlpha(int256 new_alpha) external {
+	return basePS.setAlpha(new_alpha);
+    }
+
+    function getAlpha() external view returns (int256 alphaOut) {
+	return basePS.getAlpha();
+    }
+
     
     function _rand() external view returns (uint256 m) {
 	return basePS._rand();

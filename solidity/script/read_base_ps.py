@@ -203,10 +203,9 @@ class PSReader:
             state_noise_var = state_noise_var / 10**18
             obs_noise_var = obs_noise_var / 10**18
             error = pair.functions.getMeanMiscoverage().call() / 10**18
+            alpha = pair.functions.getAlpha().call() / 10**18
 
-            # print(pair.functions._rand().call() / 10**18)
-
-            print(f'[{args.market_name}] state noise var = {state_noise_var:.4f}, obs. noise var = {obs_noise_var:.4f}, '
+            print(f'[{args.market_name}, alpha = {alpha}] state noise var = {state_noise_var:.4f}, obs. noise var = {obs_noise_var:.4f}, '
                   f'threshold = {threshold:.4f}, price interval = ({lower_interval:.4f}, {upper_interval:.4f}), length = {upper_interval - lower_interval}, '
                   f'error = {error:.4f}'
             )

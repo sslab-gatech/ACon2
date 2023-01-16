@@ -165,7 +165,15 @@ contract SpecialMVP is IBasePS {
 	_n_obs = 0;
     }
 
-    
+
+    function setAlpha(int256 new_alpha) external {
+	_alpha = new_alpha;
+    }
+
+    function getAlpha() external view returns (int256 alphaOut) {
+	alphaOut = _alpha;
+    }
+
     function predict() public view returns(int256 lowerInterval, int256 upperInterval) {
 	(lowerInterval, upperInterval) = _scoreFunc.getInterval(_threshold);
     }

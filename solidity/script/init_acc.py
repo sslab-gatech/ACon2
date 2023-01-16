@@ -19,11 +19,11 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0xa0ee7a142d267c1f36714e4a8f75612f20a79720')
     parser.add_argument('--private_key', type=str, default='0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6')
     parser.add_argument('--market_names', type=str, nargs='+', default=['AMM1', 'AMM2', 'AMM3'])
+    parser.add_argument('--alphas', type=str, nargs='+', default=[0.01, 0.01, 0.01])
     parser.add_argument('--beta', type=int, default=1)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)    
     args = parser.parse_args()
-
     
     ## setup logger
     os.makedirs(os.path.join(args.output_dir, args.exp_name), exist_ok=True)
@@ -46,6 +46,7 @@ if __name__ == '__main__':
     # init ACC
     acc_addr = json.loads(open(os.path.join(args.output_dir, f'acc.json')).read())['deployedTo']
     acc = w3.eth.contract(acc_addr, abi=open('out/ACC.sol/ACC.abi.json').read())
+    # set sources
     for market_name in args.market_names:
         pair_addr = market_contracts[market_name]['factory'].functions.getPair(WETH_addr, DAI_addr).call()
         fun = acc.functions.addSource(pair_addr)
@@ -59,6 +60,7 @@ if __name__ == '__main__':
         emitted = w3.eth.sendRawTransaction(signed_tx.rawTransaction)
         nonce += 1
 
+    # set beta
     fun = acc.functions.setBeta(args.beta)
     tx = fun.buildTransaction({
         'from': address,
@@ -69,3 +71,20 @@ if __name__ == '__main__':
     signed_tx = w3.eth.account.signTransaction(tx, args.private_key)
     emitted = w3.eth.sendRawTransaction(signed_tx.rawTransaction)
     nonce += 1
+
+    # set alphas for each market
+    warnings.warn('alpha should be set by AMM itself')
+    for market_name, alpha in zip(args.market_names, args.alphas):
+        pair_addr = market_contracts[market_name]['factory'].functions.getPair(WETH_addr, DAI_addr).call()
+        pair = w3.eth.contract(pair_addr, abi=open('out/IBasePS.sol/IBasePS.abi.json').read())
+        fun = pair.functions.setAlpha(int(float(alpha)*10**18))
+        tx = fun.buildTransaction({
+            'from': address,
+            'nonce': nonce,
+            'gas': 2000000, #TODO
+            'gasPrice': Web3.toWei('50', 'gwei'), #TODO
+        })
+        signed_tx = w3.eth.account.signTransaction(tx, args.private_key)
+        emitted = w3.eth.sendRawTransaction(signed_tx.rawTransaction)
+        nonce += 1
+    
