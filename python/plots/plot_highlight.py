@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--zoom_start_index', type=int, default=0)
     parser.add_argument('--zoom_end_index', type=int, default=10)
     parser.add_argument('--show_base_ps', action='store_true')
+    parser.add_argument('--no_ours', action='store_true')
     args = parser.parse_args()
     #color_list = ['C3', 'C4', 'C8', 'C9']
     color_list = ['r', 'b', 'gold', 'C9']
@@ -134,9 +135,10 @@ if __name__ == '__main__':
         fig, ax = plt.subplots()
 
         # prediction set
-        h = plt.fill_between(time[::args.step], itv_max[::args.step], itv_min[::args.step], color='green', alpha=0.4, label=args.ours_name)
-        hs.append(h)
-        print(itv_max)
+        if not args.no_ours:
+            h = plt.fill_between(time[::args.step], itv_max[::args.step], itv_min[::args.step], color='green', alpha=0.4, label=args.ours_name)
+            hs.append(h)
+            print(itv_max)
         
         # observations
         price_obs = []

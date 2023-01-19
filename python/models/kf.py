@@ -104,14 +104,13 @@ class KF1D(tc.nn.Module):
         obs_pred = self.predict()
         if hasattr(t, 'item'):
             t = t.item()
-        #t = max(1e-9, t) # avoid numerical error
         # if t == 0:
         #     interval = [-np.inf, np.inf]
         #     return interval
         
         mu = obs_pred['mu'].item()
         sig = obs_pred['cov'].sqrt().item()
-        c = - 2 * np.log(t + 1e-9) - 2 * np.log(sig + 1e-9) - np.log(2*np.pi) # avoid numerical error
+        c = - 2 * np.log(t + 1e-32) - 2 * np.log(sig + 1e-32) - np.log(2*np.pi)  # avoid numerical error
         c = max(0, c) # an empty prediction set
         interval = [mu - sig * np.sqrt(c), mu + sig * np.sqrt(c)]
         assert not any(np.isnan(interval)), f't = {t}, mu = {mu}, sig = {sig}, c = {c}'

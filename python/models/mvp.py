@@ -426,17 +426,17 @@ class SpecialMVP:
         
         
     def error(self, label):
-        # score = self.base.score(label)
-        # # print(f'score = {score}, label = {label}, threshold = {self.threshold}')
-        # if score >= 1.0:
-        #     warnings.warn(f'score is larger than one: score = {score}')
-        # return (score < self.threshold).astype('float')
+        score = self.base.score(label)
+        # print(f'score = {score}, label = {label}, threshold = {self.threshold}')
+        if score >= 1.0:
+            warnings.warn(f'score is larger than one: score = {score}')
+        return (score < self.threshold).astype('float')
 
-        itv = self.predict()
-        if itv[0] <= label and label <= itv[1]:
-            return 0.0
-        else:
-            return 1.0
+        # itv = self.predict()
+        # if itv[0] <= label and label <= itv[1]:
+        #     return 0.0
+        # else:
+        #     return 1.0
 
 
     
@@ -527,6 +527,9 @@ class SpecialMVP:
             ##DGB
             # self.threshold = 1 - find_threshold_mvp()
             self.threshold = find_threshold_mvp()
+            
+            print(self.threshold)
+
             
             print(f'[MVP] threshold = {self.threshold:.4f}, size = {self.ps[1] - self.ps[0]:.4f}, '
                   f'interval = [{self.ps[0]:.4f}, {self.ps[1]:.4f}], obs = {label:.4f}, '

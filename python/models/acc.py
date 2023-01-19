@@ -29,14 +29,14 @@ class ACC:
     def error(self, label):
         # assume the median is the consensued value
         label_c = np.median([label[k] for k in label.keys() if label[k] is not None])
-        # score = int(np.sum([1.0 - self.models[k].error(label_c) for k in label.keys()]))
-        # return float(score < len(self.models) - self.args.beta)
+        score = int(np.sum([1.0 - self.models[k].error(label_c) for k in label.keys()]))
+        return float(score < len(self.models) - self.args.beta)
 
-        itv, _ = self.predict()
-        if itv[0] <= label_c and label_c <= itv[1]:
-            return 0.0
-        else:
-            return 1.0
+        # itv, _ = self.predict()
+        # if itv[0] <= label_c and label_c <= itv[1]:
+        #     return 0.0
+        # else:
+        #     return 1.0
 
     
     
