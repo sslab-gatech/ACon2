@@ -1,3 +1,4 @@
+ALPHA=$1
 for i in 1 2 3
 do
     # deploy factory
@@ -38,6 +39,6 @@ forge create \
 echo "- ACC is deployed."
 
 # init ACC
-python3 script/init_acc.py --exp_name init_acc --market_names AMM1 AMM2 AMM3 --beta 1
+python3 script/init_acc.py --exp_name init_acc --market_names AMM1 AMM2 AMM3 --beta 1 --alphas $ALPHA $ALPHA $ALPHA
 echo "- ACC is initialized."
 

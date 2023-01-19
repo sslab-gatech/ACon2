@@ -84,7 +84,9 @@ class LP:
     def check_WETH_DAI_pair(self):
 
         pair_addr = self.market['factory'].functions.getPair(self.WETH_addr, self.DAI_addr).call()
-        pair = self.w3.eth.contract(pair_addr, abi=open('out/IUniswapV2Pair.sol/IUniswapV2Pair.0.8.16.abi.json').read())
+        #pair = self.w3.eth.contract(pair_addr, abi=open('out/IUniswapV2Pair.sol/IUniswapV2Pair.0.8.16.abi.json').read())
+        pair = self.w3.eth.contract(pair_addr, abi=open('out/IUniswapV2Pair.sol/IUniswapV2Pair.abi.json').read())
+
         reserve0, reserve1, _ = pair.functions.getReserves().call()
 
         token0_addr = pair.functions.token0().call()

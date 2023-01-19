@@ -7,7 +7,7 @@ interface IACC {
     function getSources() external view returns (uint sourcesOut);
 
     function setBeta(uint new_beta) external;
-    function predict() external view returns (int256 lowerInterval, int256 upperInterval); // no inputs as it uses all previous data
+    function predict() external view returns (int256 lowerInterval, int256 upperInterval, int256[] memory lowerIntervals, int256[] memory upperIntervals); // no inputs as it uses all previous data
 
     function getBeta() external view returns (uint betaOut);
 }

@@ -20,8 +20,10 @@ def get_market_contracts(w3eth, market_names, output_dir):
         elif 'AMM' in market_name:
             router02_addr = json.loads(open(os.path.join(output_dir, f'{market_name.lower()}_router.json')).read())['deployedTo']
             factory_addr = json.loads(open(os.path.join(output_dir, f'{market_name.lower()}_factory.json')).read())['deployedTo']
-            router02 = w3eth.contract(router02_addr, abi=open('out/IUniswapV2Router02.sol/IUniswapV2Router02.0.8.16.abi.json').read())
-            factory = w3eth.contract(factory_addr, abi=open('out/IUniswapV2Factory.sol/IUniswapV2Factory.0.8.16.abi.json').read())
+            # router02 = w3eth.contract(router02_addr, abi=open('out/IUniswapV2Router02.sol/IUniswapV2Router02.0.8.16.abi.json').read())
+            # factory = w3eth.contract(factory_addr, abi=open('out/IUniswapV2Factory.sol/IUniswapV2Factory.0.8.16.abi.json').read())
+            router02 = w3eth.contract(router02_addr, abi=open('out/IUniswapV2Router02.sol/IUniswapV2Router02.abi.json').read())
+            factory = w3eth.contract(factory_addr, abi=open('out/IUniswapV2Factory.sol/IUniswapV2Factory.abi.json').read())
 
         else:
             raise NotImplementedError

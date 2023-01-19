@@ -217,12 +217,12 @@ class Trader:
             # randomly sell or buy
             if np.random.rand() < 0.5:
                 # sell ETH
-                ETH_amount = int(1 * 1e18)
+                ETH_amount = int(10 * 1e18)
                 gas_used = self.swap_ETHforDAI(market_contracts, ETH_amount)
                 #print(f'[address = {self.address}] sell ETH = {self.w3.fromWei(ETH_amount, "ether"):.4f}')
             else:
                 # buy ETH
-                DAI_amount = int(1 * 1e18)
+                DAI_amount = int(10 * 1e18)
                 gas_used = self.swap_DAIforETH(market_contracts, DAI_amount)
                 #print(f'[address = {self.address}] sell DAI = {DAI_amount}')
 
@@ -246,7 +246,7 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
     parser.add_argument('--market_names', type=str, nargs='+', default='UniswapV2')
-    parser.add_argument('--time_interval_sec', type=float, default=0.1)
+    parser.add_argument('--time_interval_sec', type=float, default=1)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)

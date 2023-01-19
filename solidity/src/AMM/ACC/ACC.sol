@@ -45,14 +45,14 @@ contract ACC is IACC {
     }
     
     
-    function predict() external view returns(int256 lowerInterval, int256 upperInterval) {
-	int256[] memory lowerIntervals = new int256[](sources.length);
-	int256[] memory upperIntervals = new int256[](sources.length);
+    function predict() external view returns(int256 lowerInterval, int256 upperInterval, int256[] memory lowerIntervals, int256[] memory upperIntervals) {
+	lowerIntervals = new int256[](sources.length);
+	upperIntervals = new int256[](sources.length);
 	int256[] memory edges = new int256[](2 * sources.length); //TODO: inefficient
 	
 	// handle a trivial case
 	if( sources.length == 0 ) {
-	    return (PRBMathSD59x18.MIN_SD59x18, PRBMathSD59x18.MAX_SD59x18);
+	    return (PRBMathSD59x18.MIN_SD59x18, PRBMathSD59x18.MAX_SD59x18, new int256[](0), new int256[](0));
 	}
 
 	// read prediction sets from all sources

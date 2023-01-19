@@ -93,18 +93,37 @@ def get_spot_price_UniswapV2(args):
     else:
         set_block_numbers = set()
 
-        
-    for block_number in range(block_start.number, block_end.number+1):
+    block_number = block_start.number
+    while True:   
+    #for block_number in range(block_start.number, block_end.number+1):
         if block_number in set_block_numbers:
+            block_number += 1
             continue
+
+        if block_number > block_end.number:
+            break
+        
         t = time.time()
-        price = get_price(w3, factory, block_number, token0_addr=tokenname2addr(args.token0), token1_addr=tokenname2addr(args.token1))
+        try:
+            price = get_price(w3, factory, block_number, token0_addr=tokenname2addr(args.token0), token1_addr=tokenname2addr(args.token1))
+        except Exception as e:
+            print("Exception:", e)
+            continue
+        
         block_time = np.array(w3.eth.get_block(block_number).timestamp, dtype='datetime64[s]')
-        print(f"[running time = {time.time() - t}, {block_time}] price = {price}")
         d = {'time': block_time, 'price': price, 'block_number': block_number}
         data.append(d)
+        block_number += 1
+
+        if block_number % 1000 == 0:
+            print(f'[saved at {fn_data}] length = {len(data)}')
+            pickle.dump(data, open(fn_data, 'wb'))
+
         
-        pickle.dump(data, open(fn_data, 'wb'))
+        print(f"[running time = {time.time() - t:.4f}, {block_time}] price = {price:.4f}")
+
+    # save
+    pickle.dump(data, open(fn_data, 'wb'))
 
     
     

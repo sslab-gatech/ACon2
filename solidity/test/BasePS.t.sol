@@ -97,6 +97,12 @@ contract BasePSTest is Test {
 	}
     }
 
+    function testObserve() public {
+	uint reserve0 = 1 * 10**18;
+	uint reserve1 = 1 * 10**18;
+	ps.update(reserve0, reserve1);
+	assert(ps._obs() == 1 * 10**18);
+    }
     
     function testKF1D() public {
 
