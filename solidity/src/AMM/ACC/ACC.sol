@@ -43,21 +43,20 @@ contract ACC is IACC {
     function getBeta() external view returns (uint betaOut) {
 	betaOut = beta;
     }
-    
-    
-    function predict() external view returns(int256 lowerInterval, int256 upperInterval, int256[] memory lowerIntervals, int256[] memory upperIntervals) {
-	lowerIntervals = new int256[](sources.length);
-	upperIntervals = new int256[](sources.length);
+
+    function predictConsensusSet(int256[] memory lowerIntervals, int256[] memory upperIntervals) private view returns(int256 lowerInterval, int256 upperInterval) {
+	
 	int256[] memory edges = new int256[](2 * sources.length); //TODO: inefficient
 	
 	// handle a trivial case
 	if( sources.length == 0 ) {
-	    return (PRBMathSD59x18.MIN_SD59x18, PRBMathSD59x18.MAX_SD59x18, new int256[](0), new int256[](0));
+	    return (PRBMathSD59x18.MIN_SD59x18, PRBMathSD59x18.MAX_SD59x18);
 	}
 
 	// read prediction sets from all sources
 	for( uint i=0; i<sources.length; i++ ) {
-	    (int256 l, int256 u) = IBasePS(sources[i]).predict();
+	    int256 l = lowerIntervals[i];
+	    int256 u = upperIntervals[i];
 	    lowerIntervals[i] = l - smallNum;
 	    upperIntervals[i] = u + smallNum;
 	    edges[i] = l;
@@ -96,24 +95,32 @@ contract ACC is IACC {
 	}
     }
 
+    function eval() external view returns(int256 lowerInterval, int256 upperInterval, int256[] memory lowerIntervals, int256[] memory upperIntervals, int256[] memory observations) {
+
+	lowerIntervals = new int256[](sources.length);
+	upperIntervals = new int256[](sources.length);
+	observations = new int256[](sources.length);
+	
+	// read prediction sets from all sources
+	for( uint i=0; i<sources.length; i++ ) {
+	    (lowerIntervals[i], upperIntervals[i], observations[i]) = IBasePS(sources[i]).getEvalData();
+	}
+
+	// predict a consensus set
+	(lowerInterval, upperInterval) = predictConsensusSet(lowerIntervals, upperIntervals);
+    }
     
-    /* function _scale() private pure returns (int256 s) { */
-    /* 	s = PRBMathSD59x18.scale(); */
-    /* } */
+    function predict() external view returns(int256 lowerInterval, int256 upperInterval) {
+	
+	int256[] memory lowerIntervals = new int256[](sources.length);
+	int256[] memory upperIntervals = new int256[](sources.length);
+	
+	// read prediction sets from all sources
+	for( uint i=0; i<sources.length; i++ ) {
+	    (lowerIntervals[i], upperIntervals[i]) = IBasePS(sources[i]).predict();
+	}
+	
+	return predictConsensusSet(lowerIntervals, upperIntervals);
+    }
 
-    
-    /* function miscoverage(int256 obs) public view returns (int256 e) { */
-    /* 	int256 score = _scoreFunc.getScore(obs); */
-    /* 	require(score <= 1 * _scale(), "score is larger than one"); */
-
-    /* 	if( score >= _threshold ) { */
-    /* 	    e = 0; */
-    /* 	} else { */
-    /* 	    e = 1 * _scale(); */
-    /* 	} */
-    /* } */
-
-    /* function getMeanMiscoverage() public view returns (int256 m) { */
-    /* 	m = n_err.div(n_obs); */
-    /* } */    
 }

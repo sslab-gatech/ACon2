@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument('--tag', type=str, default='')
     parser.add_argument('--n_sources', type=int, default=3)
     #parser.add_argument('--alpha_list', type=str, nargs='+', default=['0d03', '0d15', '0d3'])
-    parser.add_argument('--alpha_list', type=str, nargs='+', default=['0.01'])
+    parser.add_argument('--alpha_list', type=str, nargs='+', default=['0.01', '0.001'])
     parser.add_argument('--alpha_color', type=str, nargs='+', default=['green', 'red', 'blue'])
     parser.add_argument('--duration', type=int, default=1800)
 
@@ -43,8 +43,10 @@ if __name__ == '__main__':
     error_min_list = []
     error_max_list = []
     error_mean_list = []
+    alpha_list = []
+    alpha_color_list = []
     t_list = []
-    for alpha_str in args.alpha_list:
+    for alpha_color, alpha_str in zip(args.alpha_color, args.alpha_list):
         data_path_list = glob.glob(os.path.join(args.output_dir, f'{args.exp_name}_basealpha_{alpha_str.replace(".", "d")}_iter_*_duration_{args.duration}', 'data.pk'))
         print(data_path_list)
         error_stack = []
@@ -53,6 +55,8 @@ if __name__ == '__main__':
             error = [d['miscoverage_cons'] for d in data]
             error_stack.append(error)
             print(p, len(error))
+        if len(error_stack) == 0:
+            continue
         len_min = min([len(error) for error in error_stack])
         error_stack = [error[:len_min] for error in error_stack]
         error_stack = np.array(error_stack)
@@ -64,30 +68,32 @@ if __name__ == '__main__':
         error_min_list.append(error_min)
         error_max_list.append(error_max)
         error_mean_list.append(error_mean)
+        alpha_list.append(alpha_str)
+        alpha_color_list.append(alpha_color)
 
     with PdfPages(fn_out + '.pdf') as pdf:
         hs = []
         plt.figure(1)
 
         # pseudo-miscoverage rate range
-        for error_min, error_max, error_mean, t, alpha_str, color in zip(error_min_list, error_max_list, error_mean_list, t_list, args.alpha_list, args.alpha_color):
+        for error_min, error_max, error_mean, t, alpha_str, color in zip(error_min_list, error_max_list, error_mean_list, t_list, alpha_list, alpha_color_list):
             alpha_acon2 = float(alpha_str) * args.n_sources
 
             # mean
             h = plt.plot(t, error_mean, color=color, linewidth=2)
                 
             # min/max
-            h = plt.fill_between(t, error_max, error_min, color=color, alpha=0.2, label=rf'$\alpha={alpha_acon2}$')
+            h = plt.fill_between(t, error_max, error_min, color=color, alpha=0.2, label=rf'ACC with $\alpha={alpha_acon2}$')
             hs.append(h)
 
             # alpha
-            h = plt.hlines(alpha_acon2, min(t), max(t), colors='k', linestyles='dashed', label=rf'$\alpha={alpha_acon2}$')
+            h = plt.hlines(alpha_acon2, min(t), max(t), colors='k', linestyles='solid', label=rf'$\alpha={alpha_acon2}$')
 
             
         # beautify
         plt.ylim(bottom=args.y_min)
-        plt.xlabel('# sampled observations', fontsize=args.fontsize)
-        plt.ylabel(f'pseudo-miscoverage rate', fontsize=args.fontsize)
+        plt.xlabel('# observations', fontsize=args.fontsize)
+        plt.ylabel(f'miscoverage rate', fontsize=args.fontsize)
         plt.grid('on')
         plt.yticks(list(plt.yticks()[0]) + [float(e) * args.n_sources for e in args.alpha_list])
         plt.legend(handles=hs, fontsize=args.fontsize)

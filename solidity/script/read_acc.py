@@ -8,6 +8,7 @@ import json
 import warnings
 import pickle
 
+import web3
 from web3 import Web3
 
 from logger import *
@@ -41,31 +42,49 @@ class ACCReader:
         n_obs = 0
         
         while True:
-            beta = self.acc.functions.getBeta().call()
-            n_sources = self.acc.functions.getSources().call()
-            lower_interval, upper_interval, lower_intervals, upper_intervals = self.acc.functions.predict().call()
+            block_id = self.w3.eth.get_block_number()
+            beta = self.acc.functions.getBeta().call(block_identifier=block_id)
+            n_sources = self.acc.functions.getSources().call(block_identifier=block_id)
+            
+            lower_interval, upper_interval, lower_intervals, upper_intervals, observations = self.acc.functions.eval().call(block_identifier=block_id)
             lower_interval = lower_interval / 10**18
             upper_interval = upper_interval / 10**18
             base_intervals = [[l / 10**18, u / 10**18] for l, u in zip(lower_intervals, upper_intervals)]
 
-            name_prices = {
-                name: check_WETH_DAI_pair(self.w3.eth, market, self.WETH_addr, self.DAI_addr)
-                for name, market in self.market_contracts.items()}
-            prices = [v for v in name_prices.values()]
+            
+            # while True:
+            #     if self.w3.eth.get_block_number() >= block_id+1:
+            #         break
+            #     else:
+            #         time.sleep(0.001)
+            # name_prices = {
+            #     name: check_WETH_DAI_pair(self.w3.eth, market, self.WETH_addr, self.DAI_addr, block_id=block_id)
+            #     for name, market in self.market_contracts.items()}
+            # prices = [v for v in name_prices.values()]
+            # prices_str = ",".join([f'{v:.4f}' for v in prices])
+            # pseudo_label = np.median(prices)
+            
+            prices = [float(v / 10**18) for v in observations]
             prices_str = ",".join([f'{v:.4f}' for v in prices])
             pseudo_label = np.median(prices)
+            # # choose the mean of the second two
+            # pseudo_label = np.mean(prices[1:])
+
             
+            # compute errors
             n_obs += 1
             if not(pseudo_label >= lower_interval and pseudo_label <= upper_interval):
                 n_err_cons += 1
 
             cover = [1 if l <= pseudo_label and pseudo_label <= u else 0 for l, u in base_intervals]
+            # print(pseudo_label, base_intervals)
+            # print(cover)
             if np.sum(cover) < n_sources - beta:
                 n_err += 1
             
             data.append({
                 'prices': prices,
-                'market_names': [k for k in name_prices.keys()],
+                'market_names': [k for k in self.market_contracts.keys()],
                 'beta': beta,
                 'n_sources': n_sources,
                 'interval': [lower_interval, upper_interval],
@@ -73,7 +92,7 @@ class ACCReader:
                 'miscoverage': n_err / n_obs,
             })
 
-            print(f'[ACC] beta = {beta}, n_sources = {n_sources}, price = {prices_str}, median(price) = {np.median(prices):.4f}, '
+            print(f'[ACC] beta = {beta}, n_sources = {n_sources}, price = {prices_str}, pseudo-label= {pseudo_label:.4f}, '
                   f'price interval = ({lower_interval:.4f}, {upper_interval:.4f}), length = {upper_interval - lower_interval:.4f}, '
                   f'error_cons = {n_err_cons / n_obs:.4f}, error = {n_err / n_obs:.4f}'
             )
@@ -88,7 +107,7 @@ if __name__ == '__main__':
     parser.add_argument('--private_key', type=str, default='0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6')
     parser.add_argument('--market_names', type=str, nargs='+', default=['AMM1', 'AMM2', 'AMM3'])
     parser.add_argument('--beta', type=int, default=1)
-    parser.add_argument('--time_interval_sec', type=int, default=0)
+    parser.add_argument('--time_interval_sec', type=int, default=0.01)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)

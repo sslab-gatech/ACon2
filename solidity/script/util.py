@@ -1,5 +1,6 @@
 import os, sys
 import json
+import web3
 
 def get_market_contracts(w3eth, market_names, output_dir):
     market_contracts = {}
@@ -34,13 +35,14 @@ def get_market_contracts(w3eth, market_names, output_dir):
 
 
 
-def check_WETH_DAI_pair(w3eth, market, WETH_addr, DAI_addr):
-    pair_addr = market['factory'].functions.getPair(WETH_addr, DAI_addr).call()
+def check_WETH_DAI_pair(w3eth, market, WETH_addr, DAI_addr, block_id=web3.eth.Eth.default_block):
+    
+    pair_addr = market['factory'].functions.getPair(WETH_addr, DAI_addr).call(block_identifier=block_id)
     pair = w3eth.contract(pair_addr, abi=open('script/abi_uniswap_v2_pair.json').read())
-    reserve0, reserve1, _ = pair.functions.getReserves().call()
+    reserve0, reserve1, _ = pair.functions.getReserves().call(block_identifier=block_id)
 
-    token0_addr = pair.functions.token0().call()
-    token1_addr = pair.functions.token1().call()
+    token0_addr = pair.functions.token0().call(block_identifier=block_id)
+    token1_addr = pair.functions.token1().call(block_identifier=block_id)
 
     if (token0_addr == WETH_addr) and (token1_addr == DAI_addr):
         DAI_ETH_price = reserve1 / reserve0

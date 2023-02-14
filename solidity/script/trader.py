@@ -127,7 +127,7 @@ class Trader:
         signed_tx = self.w3.eth.account.signTransaction(tx, self.args.private_key)
         emitted = self.w3.eth.sendRawTransaction(signed_tx.rawTransaction)
         self.nonce += 1
-        
+
         
     def swap_ETHforDAI(self, contracts, amount_in_wei):
 
@@ -153,13 +153,14 @@ class Trader:
         emitted = self.w3.eth.sendRawTransaction(signed_tx.rawTransaction)
         self.nonce += 1
 
-        try:
-            time.sleep(0.1)
-            gas_used = self.w3.eth.getTransactionReceipt(emitted).gasUsed
-        except web3.exceptions.TransactionNotFound:
-            gas_used = None
-
-        return gas_used
+        # try:
+        #     time.sleep(0.1)
+        #     gas_used = self.w3.eth.getTransactionReceipt(emitted).gasUsed
+        # except web3.exceptions.TransactionNotFound:
+        #     gas_used = None
+        gas_used = 0
+            
+        return gas_used, min_amount_out
     
         
     def swap_DAIforETH(self, contracts, amount_in):
@@ -197,45 +198,78 @@ class Trader:
         emitted = self.w3.eth.sendRawTransaction(signed_tx.rawTransaction)
         self.nonce += 1
 
-        try:
-            time.sleep(0.1)
-            gas_used = self.w3.eth.getTransactionReceipt(emitted).gasUsed
-        except web3.exceptions.TransactionNotFound:
-            gas_used = None
+        # try:
+        #     time.sleep(0.1)
+        #     gas_used = self.w3.eth.getTransactionReceipt(emitted).gasUsed
+        # except web3.exceptions.TransactionNotFound:
+        #     gas_used = None
+
+        gas_used = 0
                     
-        return gas_used
+        return gas_used, min_amount_out
 
 
         
     def run(self):
         gas_used_history = []
         while True:
-            # randomly choose a market
-            market_name = np.random.choice(self.args.market_names)
-            market_contracts = self.market_contracts[market_name]
             
-            # randomly sell or buy
-            if np.random.rand() < 0.5:
-                # sell ETH
-                ETH_amount = int(10 * 1e18)
-                gas_used = self.swap_ETHforDAI(market_contracts, ETH_amount)
-                #print(f'[address = {self.address}] sell ETH = {self.w3.fromWei(ETH_amount, "ether"):.4f}')
+            if args.ideal:
+                # sell/buy the same amount of tokens to the second and third markets
+                market_contract0 = self.market_contracts[self.args.market_names[0]]
+                market_contract1 = self.market_contracts[self.args.market_names[1]]
+                market_contract2 = self.market_contracts[self.args.market_names[2]]
+
+                # randomly sell or buy
+                if np.random.rand() < 0.5:
+                    # sell ETH
+                    _, _ = self.swap_ETHforDAI(market_contract0, int(np.random.uniform(0.1, 1) * 10**18))
+                    ETH_amount_unscaled = np.random.uniform(0.1, 1)
+                    _, _ = self.swap_ETHforDAI(market_contract1, int(np.random.normal(ETH_amount_unscaled, 0.0) * 10**18))
+                    _, _ = self.swap_ETHforDAI(market_contract2, int(np.random.normal(ETH_amount_unscaled, 0.0) * 10**18))
+                    
+                else:
+                    # buy ETH
+                    _, _ = self.swap_DAIforETH(market_contract0, int(np.random.uniform(0.1, 1) * 10**18))
+                    DAI_amount_unscaled = np.random.uniform(0.1, 1)
+                    _, _ = self.swap_DAIforETH(market_contract1, int(np.random.normal(DAI_amount_unscaled, 0.0) * 10**18))
+                    _, _ = self.swap_DAIforETH(market_contract2, int(np.random.normal(DAI_amount_unscaled, 0.0) * 10**18))
+
+                # get current balance
+                print(f'[trader] '
+                      f'ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
+                      f'DAI balance = {self.w3.fromWei(self.check_DAI_balance(), "ether"): .4f}, '
+                      f'{self.args.market_names[0]} WETH / DAI price = {self.check_WETH_DAI_pair(market_contract0)}, '
+                      f'{self.args.market_names[1]} WETH / DAI price = {self.check_WETH_DAI_pair(market_contract1)}, '
+                      f'{self.args.market_names[2]} WETH / DAI price = {self.check_WETH_DAI_pair(market_contract2)}'
+                )
+                
             else:
-                # buy ETH
-                DAI_amount = int(10 * 1e18)
-                gas_used = self.swap_DAIforETH(market_contracts, DAI_amount)
-                #print(f'[address = {self.address}] sell DAI = {DAI_amount}')
+                # randomly choose a market
+                market_name = np.random.choice(self.args.market_names)
+                market_contracts = self.market_contracts[market_name]
 
-            if gas_used is not None:
-                gas_used_history.append(gas_used)
+                # randomly sell or buy
+                if np.random.rand() < 0.5:
+                    # sell ETH
+                    ETH_amount = int(np.random.uniform(0.1, 2) * 1e18)
+                    gas_used, _ = self.swap_ETHforDAI(market_contracts, ETH_amount)
+                    #print(f'[address = {self.address}] sell ETH = {self.w3.fromWei(ETH_amount, "ether"):.4f}')
+                else:
+                    # buy ETH
+                    DAI_amount = int(np.random.uniform(0.1, 2) * 1e18)
+                    gas_used, _ = self.swap_DAIforETH(market_contracts, DAI_amount)
+                    #print(f'[address = {self.address}] sell DAI = {DAI_amount}')
 
-            # get current balance
-            print(f'[{market_name}] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
-                  f'DAI balance = {self.w3.fromWei(self.check_DAI_balance(), "ether"): .4f}, '
-                  #f'WETH balance = {self.check_WETH_balance()}, '
-                  f'{market_name} WETH / DAI price = {self.check_WETH_DAI_pair(market_contracts)}, '
-                  f'gas used (for {len(gas_used_history)} TXs) = {np.mean(gas_used_history):.4f} +- {np.std(gas_used_history):.4f}'
-            )
+                if gas_used is not None:
+                    gas_used_history.append(gas_used)
+
+                # get current balance
+                print(f'[trader] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
+                      f'DAI balance = {self.w3.fromWei(self.check_DAI_balance(), "ether"): .4f}, '
+                      f'{market_name} WETH / DAI price = {self.check_WETH_DAI_pair(market_contracts)}, '
+                      f'gas used (for {len(gas_used_history)} TXs) = {np.mean(gas_used_history):.4f} +- {np.std(gas_used_history):.4f}'
+                )
                 
             time.sleep(self.args.time_interval_sec)
 
@@ -246,10 +280,11 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
     parser.add_argument('--market_names', type=str, nargs='+', default='UniswapV2')
-    parser.add_argument('--time_interval_sec', type=float, default=1)
+    parser.add_argument('--time_interval_sec', type=float, default=0.01)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)
+    parser.add_argument('--ideal', action='store_true')
     
     args = parser.parse_args()
 
