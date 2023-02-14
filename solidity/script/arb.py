@@ -20,6 +20,7 @@ class Arbitrageur:
         ## setup logger
         os.makedirs(os.path.join(args.output_dir, args.exp_name), exist_ok=True)
         sys.stdout = Logger(os.path.join(args.output_dir, args.exp_name, 'out'))
+        sys.stderr = Logger(os.path.join(args.output_dir, args.exp_name, 'out_err'))
         
         self.w3 = Web3(Web3.HTTPProvider(self.args.provider_url))
         assert(self.w3.isConnected())
@@ -233,7 +234,7 @@ class Arbitrageur:
 
     def run(self):
         while True:
-            
+
             price_diff_max = 0
             # for market_name0_i, market_name1_i in itertools.combinations(self.args.markets, 2):
             for _ in range(1):
@@ -251,12 +252,16 @@ class Arbitrageur:
                     price_diff_max = price_diff_i
                     
                 
-            
-            self.arbitrage(
-                {'contract': self.markets[market_name0], 'token0': DAI_reserve0, 'token1': ETH_reserve0},
-                {'contract': self.markets[market_name1], 'token0': DAI_reserve1, 'token1': ETH_reserve1},
-                self.args.min_benefit_DAI
-            )
+            try:            
+                self.arbitrage(
+                    {'contract': self.markets[market_name0], 'token0': DAI_reserve0, 'token1': ETH_reserve0},
+                    {'contract': self.markets[market_name1], 'token0': DAI_reserve1, 'token1': ETH_reserve1},
+                    self.args.min_benefit_DAI
+                )
+            except web3.exceptions.ContractLogicError:
+                print('transactions are likely reverted')
+                continue
+
 
             dai_price_market0_after, _, _ = self.check_WETH_DAI_pair(self.markets[market_name0])
             dai_price_market1_after, _, _ = self.check_WETH_DAI_pair(self.markets[market_name1])
@@ -280,7 +285,7 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
     parser.add_argument('--markets', type=str, nargs='+', default=['UniswapV2', 'SushiSwap'])
-    parser.add_argument('--time_interval_sec', type=int, default=0)
+    parser.add_argument('--time_interval_sec', type=int, default=0.01)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)

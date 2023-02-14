@@ -1,5 +1,5 @@
 mkdir output
-./script/deploy.sh $1
+./script/deploy.sh $1 $2
 ./script/run_traders.sh
 sleep 5
 ./script/run_adv.sh

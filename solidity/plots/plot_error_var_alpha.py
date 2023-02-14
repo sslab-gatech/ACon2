@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # parser.add_argument('--data_start_idx', type=int, default=0)
     # parser.add_argument('--data_end_idx', type=int, default=2000)
     parser.add_argument('--y_min', type=float, default=0.0)
-    parser.add_argument('--y_max', type=float, default=0.1)
+    parser.add_argument('--y_max', type=float, default=0.05)
     parser.add_argument('--tag', type=str, default='')
     parser.add_argument('--n_sources', type=int, default=3)
     #parser.add_argument('--alpha_list', type=str, nargs='+', default=['0d03', '0d15', '0d3'])
@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
             
         # beautify
-        plt.ylim(bottom=args.y_min)
+        plt.ylim((args.y_min, args.y_max))
         plt.xlabel('# observations', fontsize=args.fontsize)
         plt.ylabel(f'miscoverage rate', fontsize=args.fontsize)
         plt.grid('on')

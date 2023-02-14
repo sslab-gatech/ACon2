@@ -40,12 +40,14 @@ class ACCReader:
         n_err = 0
         n_err_cons = 0
         n_obs = 0
+        gas_used_history = []
         
         while True:
             block_id = self.w3.eth.get_block_number()
             beta = self.acc.functions.getBeta().call(block_identifier=block_id)
             n_sources = self.acc.functions.getSources().call(block_identifier=block_id)
-            
+
+            gas_used_history.append(self.acc.functions.eval().estimate_gas())
             lower_interval, upper_interval, lower_intervals, upper_intervals, observations = self.acc.functions.eval().call(block_identifier=block_id)
             lower_interval = lower_interval / 10**18
             upper_interval = upper_interval / 10**18
@@ -94,7 +96,8 @@ class ACCReader:
 
             print(f'[ACC] beta = {beta}, n_sources = {n_sources}, price = {prices_str}, pseudo-label= {pseudo_label:.4f}, '
                   f'price interval = ({lower_interval:.4f}, {upper_interval:.4f}), length = {upper_interval - lower_interval:.4f}, '
-                  f'error_cons = {n_err_cons / n_obs:.4f}, error = {n_err / n_obs:.4f}'
+                  f'error_cons = {n_err_cons / n_obs:.4f}, error = {n_err / n_obs:.4f}, '
+                  f'gas used (for {len(gas_used_history)} TXs) = {np.mean(gas_used_history):.2f} +- {np.std(gas_used_history):.2f}'
             )
             pickle.dump(data, open(data_fn, 'wb'))
             time.sleep(self.args.time_interval_sec)
@@ -111,8 +114,9 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)
-    
+
     args = parser.parse_args()
+    print(args)
 
     reader = ACCReader(args)
     reader.run()

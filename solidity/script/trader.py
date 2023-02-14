@@ -21,6 +21,7 @@ class Trader:
         ## setup logger
         os.makedirs(os.path.join(args.output_dir, args.exp_name), exist_ok=True)
         sys.stdout = Logger(os.path.join(args.output_dir, args.exp_name, 'out'))
+        sys.stderr = Logger(os.path.join(args.output_dir, args.exp_name, 'out_err'))
         
         self.w3 = Web3(Web3.HTTPProvider(self.args.provider_url))
         assert(self.w3.isConnected())
@@ -149,18 +150,19 @@ class Trader:
             'gas': 2000000, #TODO
             'gasPrice': Web3.toWei('50', 'gwei'), #TODO
         })
+        gas_used_est = self.w3.eth.estimate_gas(tx)
         signed_tx = self.w3.eth.account.signTransaction(tx, self.args.private_key)
         emitted = self.w3.eth.sendRawTransaction(signed_tx.rawTransaction)
         self.nonce += 1
 
+        #TODO: use wait_for_transaction_receipt
         # try:
         #     time.sleep(0.1)
         #     gas_used = self.w3.eth.getTransactionReceipt(emitted).gasUsed
         # except web3.exceptions.TransactionNotFound:
         #     gas_used = None
-        gas_used = 0
             
-        return gas_used, min_amount_out
+        return gas_used_est, min_amount_out
     
         
     def swap_DAIforETH(self, contracts, amount_in):
@@ -194,6 +196,7 @@ class Trader:
             'gas': 2000000, #TODO
             'gasPrice': Web3.toWei('50', 'gwei'), #TODO
         })
+        gas_used_est = self.w3.eth.estimate_gas(tx)
         signed_tx = self.w3.eth.account.signTransaction(tx, self.args.private_key)
         emitted = self.w3.eth.sendRawTransaction(signed_tx.rawTransaction)
         self.nonce += 1
@@ -203,10 +206,8 @@ class Trader:
         #     gas_used = self.w3.eth.getTransactionReceipt(emitted).gasUsed
         # except web3.exceptions.TransactionNotFound:
         #     gas_used = None
-
-        gas_used = 0
                     
-        return gas_used, min_amount_out
+        return gas_used_est, min_amount_out
 
 
         
@@ -221,19 +222,24 @@ class Trader:
                 market_contract2 = self.market_contracts[self.args.market_names[2]]
 
                 # randomly sell or buy
-                if np.random.rand() < 0.5:
-                    # sell ETH
-                    _, _ = self.swap_ETHforDAI(market_contract0, int(np.random.uniform(0.1, 1) * 10**18))
-                    ETH_amount_unscaled = np.random.uniform(0.1, 1)
-                    _, _ = self.swap_ETHforDAI(market_contract1, int(np.random.normal(ETH_amount_unscaled, 0.0) * 10**18))
-                    _, _ = self.swap_ETHforDAI(market_contract2, int(np.random.normal(ETH_amount_unscaled, 0.0) * 10**18))
-                    
-                else:
-                    # buy ETH
-                    _, _ = self.swap_DAIforETH(market_contract0, int(np.random.uniform(0.1, 1) * 10**18))
-                    DAI_amount_unscaled = np.random.uniform(0.1, 1)
-                    _, _ = self.swap_DAIforETH(market_contract1, int(np.random.normal(DAI_amount_unscaled, 0.0) * 10**18))
-                    _, _ = self.swap_DAIforETH(market_contract2, int(np.random.normal(DAI_amount_unscaled, 0.0) * 10**18))
+                try:
+                    if np.random.rand() < 0.5:
+                        # sell ETH
+                        _, _ = self.swap_ETHforDAI(market_contract0, int(np.random.uniform(0.1, 1) * 10**18))
+                        ETH_amount_unscaled = np.random.uniform(0.1, 1)
+                        _, _ = self.swap_ETHforDAI(market_contract1, int(np.random.normal(ETH_amount_unscaled, 0.0) * 10**18))
+                        _, _ = self.swap_ETHforDAI(market_contract2, int(np.random.normal(ETH_amount_unscaled, 0.0) * 10**18))
+
+                    else:
+                        # buy ETH
+                        _, _ = self.swap_DAIforETH(market_contract0, int(np.random.uniform(0.1, 1) * 10**18))
+                        DAI_amount_unscaled = np.random.uniform(0.1, 1)
+                        _, _ = self.swap_DAIforETH(market_contract1, int(np.random.normal(DAI_amount_unscaled, 0.0) * 10**18))
+                        _, _ = self.swap_DAIforETH(market_contract2, int(np.random.normal(DAI_amount_unscaled, 0.0) * 10**18))
+                except web3.exceptions.ContractLogicError:
+                    print('transactions are likely reverted')
+                    continue
+            
 
                 # get current balance
                 print(f'[trader] '
@@ -250,19 +256,23 @@ class Trader:
                 market_contracts = self.market_contracts[market_name]
 
                 # randomly sell or buy
-                if np.random.rand() < 0.5:
-                    # sell ETH
-                    ETH_amount = int(np.random.uniform(0.1, 2) * 1e18)
-                    gas_used, _ = self.swap_ETHforDAI(market_contracts, ETH_amount)
-                    #print(f'[address = {self.address}] sell ETH = {self.w3.fromWei(ETH_amount, "ether"):.4f}')
-                else:
-                    # buy ETH
-                    DAI_amount = int(np.random.uniform(0.1, 2) * 1e18)
-                    gas_used, _ = self.swap_DAIforETH(market_contracts, DAI_amount)
-                    #print(f'[address = {self.address}] sell DAI = {DAI_amount}')
+                try:
+                    if np.random.rand() < 0.5:
+                        # sell ETH
+                        ETH_amount = int(np.random.uniform(0.1, 2) * 1e18)
+                        gas_used, _ = self.swap_ETHforDAI(market_contracts, ETH_amount)
+                        #print(f'[address = {self.address}] sell ETH = {self.w3.fromWei(ETH_amount, "ether"):.4f}')
+                    else:
+                        # buy ETH
+                        DAI_amount = int(np.random.uniform(0.1, 2) * 1e18)
+                        gas_used, _ = self.swap_DAIforETH(market_contracts, DAI_amount)
+                        #print(f'[address = {self.address}] sell DAI = {DAI_amount}')
 
-                if gas_used is not None:
-                    gas_used_history.append(gas_used)
+                    if gas_used is not None and len(gas_used_history) <= 600:
+                        gas_used_history.append(gas_used)
+                except web3.exceptions.ContractLogicError:
+                    print('transactions are likely reverted')
+                    continue
 
                 # get current balance
                 print(f'[trader] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
