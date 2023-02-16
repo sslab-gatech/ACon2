@@ -84,8 +84,8 @@ contract KF1D is ISeqScoreFunc {
 
 	// update the max score
 	{
-	    (int256 predObsMean, int256 predObsVar) = predict();
-	    maxScore = (predObsVar.mul(PRBMathSD59x18.pi()).mul(2 * _scale())).sqrt().inv();
+	    /* (int256 predObsMean, int256 predObsVar) = predict(); */
+	    /* maxScore = (predObsVar.mul(PRBMathSD59x18.pi()).mul(2 * _scale())).sqrt().inv(); */
 	}
 
     }
@@ -161,6 +161,10 @@ contract SpecialMVP is IBasePS {
 	_eta = initEta;
 	_corrWeight = new int256[](_numOfBins);
 	_thresCount = new int256[](_numOfBins);
+	for(uint i=0; i<_numOfBins; i++) {
+	    _corrWeight[i] = 0;
+	    _thresCount[i] = 0;
+	}
 	_obs = 0;
 	_lowerInterval = 0;
 	_upperInterval = 0;
@@ -206,7 +210,7 @@ contract SpecialMVP is IBasePS {
 
 	int256 a = n + 1 * _scale();
 	int256 b = (n + 2 * _scale()).log2();
-	z = a.sqrt().mul(b);
+	z = a.mul(b).mul(b).sqrt();
     }
 
     
@@ -242,9 +246,9 @@ contract SpecialMVP is IBasePS {
 
 	    if( currWeight > 0 ) {
 		pos = true;
-	    } /* else { */
-	    /* 	pos = false; */
-	    /* } */
+	    } else {
+		pos = false;
+	    }
 
 	    if( currWeight.mul(prevWeight) <= 0 ) {
 		int256 Z = currWeight.abs() + prevWeight.abs();
@@ -256,10 +260,10 @@ contract SpecialMVP is IBasePS {
 		}
 
 		if( _rand() <= b ) {
-		    return _scale() - ((int256(i) * _scale()).div(int256(_numOfBins) * _scale()) - _r.mul(int256(_numOfBins) * _scale()).inv());
+		    return 1*_scale() - ((int256(i) * _scale()).div(int256(_numOfBins) * _scale()) - _r.mul(int256(_numOfBins) * _scale()).inv());
 		    /* return threshold; */
 		} else {
-		    return _scale() - (int256(i) * _scale()).div(int256(_numOfBins) * _scale());
+		    return 1*_scale() - (int256(i) * _scale()).div(int256(_numOfBins) * _scale());
 		    /* return threshold; */
 		}
 	    }
@@ -299,43 +303,43 @@ contract SpecialMVP is IBasePS {
 	threshold = update(obs);
     }
 
-    function _updateState(uint reserve0, uint reserve1) public {
-	int256 obs = int256(reserve0).div(int256(reserve1));
+    /* function _updateState(uint reserve0, uint reserve1) public { */
+    /* 	int256 obs = int256(reserve0).div(int256(reserve1)); */
 
-	// update stats
-	uint binIdx = uint((_scale() - _threshold).mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale())) / uint(_scale());
-	if(binIdx > _numOfBins - 1) {
-	    binIdx = _numOfBins - 1;
-	}
+    /* 	// update stats */
+    /* 	uint binIdx = uint((_scale() - _threshold).mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale())) / uint(_scale()); */
+    /* 	if(binIdx > _numOfBins - 1) { */
+    /* 	    binIdx = _numOfBins - 1; */
+    /* 	} */
 
-	int256 miscov = miscoverage(obs);
-	_n_err = _n_err + miscov;
-	_n_obs = _n_obs + 1 * _scale();
+    /* 	int256 miscov = miscoverage(obs); */
+    /* 	_n_err = _n_err + miscov; */
+    /* 	_n_obs = _n_obs + 1 * _scale(); */
 	
-	_thresCount[binIdx] += 1 * _scale();
-	_corrWeight[binIdx] += (_alpha - miscov);
-    }
+    /* 	_thresCount[binIdx] += 1 * _scale(); */
+    /* 	_corrWeight[binIdx] += (_alpha - miscov); */
+    /* } */
 
-    function _updateThreshold(int256 threshold) public {
-	_threshold = threshold;
-    }
+    /* function _updateThreshold(int256 threshold) public { */
+    /* 	_threshold = threshold; */
+    /* } */
 
-    function _updateScoreFunc(uint reserve0, uint reserve1) public {
-	int256 obs = int256(reserve0).div(int256(reserve1));
-	_scoreFunc.update(obs);
-    }
+    /* function _updateScoreFunc(uint reserve0, uint reserve1) public { */
+    /* 	int256 obs = int256(reserve0).div(int256(reserve1)); */
+    /* 	_scoreFunc.update(obs); */
+    /* } */
 
     function update(int256 obs) public returns(int256 threshold) {
 	
 	// update stats
-	uint binIdx = uint(_threshold.mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale())) / uint(_scale());
+	uint binIdx = uint((1*_scale() - _threshold).mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale()).div(_scale()));
 	if(binIdx > _numOfBins - 1) {
 	    binIdx = _numOfBins - 1;
 	}
 
 	int256 miscov = miscoverage(obs);
-	_n_err = _n_err + miscov;
-	_n_obs = _n_obs + 1 * _scale();
+	_n_err += miscov;
+	_n_obs += 1 * _scale();
 	
 	_thresCount[binIdx] += 1 * _scale();
 	_corrWeight[binIdx] += (_alpha - miscov);

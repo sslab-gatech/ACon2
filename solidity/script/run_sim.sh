@@ -1,6 +1,6 @@
 mkdir output
-./script/deploy.sh $1 $2
-./script/run_traders.sh
-sleep 5
-./script/run_adv.sh
-./script/run_arb.sh
+./script/deploy.sh $1 $2 $3
+./script/run_traders.sh $1 $3
+#sleep 5
+./script/run_adv.sh $1 $3
+./script/run_arb.sh $1 $3

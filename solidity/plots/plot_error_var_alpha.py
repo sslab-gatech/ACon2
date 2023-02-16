@@ -25,10 +25,11 @@ if __name__ == '__main__':
     # parser.add_argument('--data_start_idx', type=int, default=0)
     # parser.add_argument('--data_end_idx', type=int, default=2000)
     parser.add_argument('--y_min', type=float, default=0.0)
-    parser.add_argument('--y_max', type=float, default=0.05)
+    parser.add_argument('--y_max', type=float, default=0.02)
     parser.add_argument('--tag', type=str, default='')
     parser.add_argument('--n_sources', type=int, default=3)
     #parser.add_argument('--alpha_list', type=str, nargs='+', default=['0d03', '0d15', '0d3'])
+    parser.add_argument('--K', type=int, default=3)
     parser.add_argument('--alpha_list', type=str, nargs='+', default=['0.01', '0.001'])
     parser.add_argument('--alpha_color', type=str, nargs='+', default=['green', 'red', 'blue'])
     parser.add_argument('--duration', type=int, default=1800)
@@ -36,7 +37,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # init
-    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_error_var_alpha{"_" if args.tag else ""}{args.tag}')
+    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_error_var_K_{args.K}_alpha{"_" if args.tag else ""}{args.tag}')
     os.makedirs(os.path.dirname(fn_out), exist_ok=True)
 
     # read data
@@ -47,7 +48,7 @@ if __name__ == '__main__':
     alpha_color_list = []
     t_list = []
     for alpha_color, alpha_str in zip(args.alpha_color, args.alpha_list):
-        data_path_list = glob.glob(os.path.join(args.output_dir, f'{args.exp_name}_basealpha_{alpha_str.replace(".", "d")}_iter_*_duration_{args.duration}', 'data.pk'))
+        data_path_list = glob.glob(os.path.join(args.output_dir, f'{args.exp_name}_K_{args.K}_alpha_{alpha_str.replace(".", "d")}_iter_*_duration_{args.duration}', 'data.pk'))
         print(data_path_list)
         error_stack = []
         for p in data_path_list:
@@ -77,7 +78,7 @@ if __name__ == '__main__':
 
         # pseudo-miscoverage rate range
         for error_min, error_max, error_mean, t, alpha_str, color in zip(error_min_list, error_max_list, error_mean_list, t_list, alpha_list, alpha_color_list):
-            alpha_acon2 = float(alpha_str) * args.n_sources
+            alpha_acon2 = float(alpha_str)
 
             # mean
             h = plt.plot(t, error_mean, color=color, linewidth=2)
@@ -95,7 +96,7 @@ if __name__ == '__main__':
         plt.xlabel('# observations', fontsize=args.fontsize)
         plt.ylabel(f'miscoverage rate', fontsize=args.fontsize)
         plt.grid('on')
-        plt.yticks(list(plt.yticks()[0]) + [float(e) * args.n_sources for e in args.alpha_list])
+        plt.yticks(list(set(list(plt.yticks()[0]) + [float(e)  for e in args.alpha_list])))
         plt.legend(handles=hs, fontsize=args.fontsize)
         plt.savefig(fn_out+'.png', bbox_inches='tight')
         pdf.savefig(bbox_inches='tight')

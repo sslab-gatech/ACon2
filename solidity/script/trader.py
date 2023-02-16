@@ -236,8 +236,12 @@ class Trader:
                         DAI_amount_unscaled = np.random.uniform(0.1, 1)
                         _, _ = self.swap_DAIforETH(market_contract1, int(np.random.normal(DAI_amount_unscaled, 0.0) * 10**18))
                         _, _ = self.swap_DAIforETH(market_contract2, int(np.random.normal(DAI_amount_unscaled, 0.0) * 10**18))
-                except web3.exceptions.ContractLogicError:
+                except web3.exceptions.ContractLogicError as e:
                     print('transactions are likely reverted')
+                    print(e)
+                    continue
+                except ValueError as e:
+                    print(e)
                     continue
             
 
@@ -270,8 +274,12 @@ class Trader:
 
                     if gas_used is not None and len(gas_used_history) <= 600:
                         gas_used_history.append(gas_used)
-                except web3.exceptions.ContractLogicError:
+                except web3.exceptions.ContractLogicError as e:
                     print('transactions are likely reverted')
+                    print(e)
+                    continue
+                except ValueError as e:
+                    print(e)
                     continue
 
                 # get current balance
@@ -290,7 +298,7 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
     parser.add_argument('--market_names', type=str, nargs='+', default='UniswapV2')
-    parser.add_argument('--time_interval_sec', type=float, default=0.01)
+    parser.add_argument('--time_interval_sec', type=float, default=0.0)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)
