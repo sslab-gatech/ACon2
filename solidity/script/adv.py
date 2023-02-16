@@ -21,27 +21,33 @@ class Adversary(Trader):
         
     def run(self):
         time.sleep(self.args.initial_sleep_interval_sec)
-        
+        warnings.warn('An adversary chooses the first market for evaluation purpose.')
         while True:
-            # randomly choose a market
-            market_name = np.random.choice(self.args.market_names)
+            if args.ideal:
+                # always choose the first one for evaluation purposes
+                market_name = self.args.market_names[0]
+            else:
+                # randomly choose a market
+                market_name = np.random.choice(self.args.market_names)
             market_contracts = self.market_contracts[market_name]
             
             # get current balance
             price_prev = self.check_WETH_DAI_pair(market_contracts)
             
-            
-            # always sell ETH
+            # sell ETH
             ETH_amount = int(100 * 1e18)
-            self.swap_ETHforDAI(market_contracts, ETH_amount)
+            _, min_DAI_out = self.swap_ETHforDAI(market_contracts, ETH_amount)
 
-            print(f'[{market_name}] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
+            print(f'[adversary] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
                   f'DAI balance = {self.w3.fromWei(self.check_DAI_balance(), "ether"): .4f}, '
                   #f'WETH balance = {self.check_WETH_balance()}, '
                   f'{market_name} WETH / DAI previous price = {price_prev}, WETH / DAI price = {self.check_WETH_DAI_pair(market_contracts)}'
             )
 
-            
+            # # buy ETH again
+            # print(min_DAI_out)
+            # self.swap_DAIforETH(market_contracts, min_DAI_out)
+
             time.sleep(self.args.time_interval_sec)
 
 
@@ -51,11 +57,13 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f')
     parser.add_argument('--private_key', type=str, default='0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97')
     parser.add_argument('--market_names', type=str, nargs='+', default='UniswapV2')
-    parser.add_argument('--initial_sleep_interval_sec', type=int, default=60.0)
-    parser.add_argument('--time_interval_sec', type=int, default=10.0)
+    parser.add_argument('--initial_sleep_interval_sec', type=int, default=0.0)
+    parser.add_argument('--time_interval_sec', type=int, default=60.0)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)
+    parser.add_argument('--ideal', action='store_true')
+
     args = parser.parse_args()
 
     adv = Adversary(args)

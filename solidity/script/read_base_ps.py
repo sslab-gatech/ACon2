@@ -199,13 +199,15 @@ class PSReader:
             lower_interval = lower_interval / 10**18
             upper_interval = upper_interval / 10**18
             threshold = pair.functions.getThreshold().call() / 10**18
+            pred_obs_mean, pred_obs_var = pair.functions.getObsPrediction().call()
+            pred_obs_mean, pred_obs_var = pred_obs_mean / 10**18, pred_obs_var / 10**18
             state_noise_var, obs_noise_var = pair.functions.getNoise().call()
             state_noise_var = state_noise_var / 10**18
             obs_noise_var = obs_noise_var / 10**18
             error = pair.functions.getMeanMiscoverage().call() / 10**18
             alpha = pair.functions.getAlpha().call() / 10**18
 
-            print(f'[{args.market_name}, alpha = {alpha}] state noise var = {state_noise_var:.4f}, obs. noise var = {obs_noise_var:.4f}, '
+            print(f'[{args.market_name}, alpha = {alpha}] obs mean = {pred_obs_mean:.4f}, obs var = {pred_obs_var:.4f}, state noise var = {state_noise_var:.4f}, obs. noise var = {obs_noise_var:.4f}, '
                   f'threshold = {threshold:.4f}, price interval = ({lower_interval:.4f}, {upper_interval:.4f}), length = {upper_interval - lower_interval}, '
                   f'error = {error:.4f}'
             )
@@ -218,7 +220,7 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
     parser.add_argument('--market_name', type=str, choices=['AMM1', 'AMM2', 'AMM3'], default='AMM1')
-    parser.add_argument('--time_interval_sec', type=int, default=0.1)
+    parser.add_argument('--time_interval_sec', type=int, default=0.01)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)

@@ -21,12 +21,13 @@ if __name__ == '__main__':
     parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
     parser.add_argument('--fontsize', type=int, default=15)
     parser.add_argument('--data_start_idx', type=int, default=0)
-    parser.add_argument('--data_end_idx', type=int, default=2000)
-    parser.add_argument('--y_min', type=float, default=0.5)
-    parser.add_argument('--y_max', type=float, default=1.5)
+    parser.add_argument('--data_end_idx', type=int, default=4000)
+    parser.add_argument('--y_min', type=float, default=0.0)
+    parser.add_argument('--y_max', type=float, default=3.0)
     parser.add_argument('--max_val', type=float, default=100)
     parser.add_argument('--log_scale', action='store_true')
     parser.add_argument('--tag', type=str, default='')
+    parser.add_argument('--ours_name', type=str, default='ACon$^2$')
 
 
     args = parser.parse_args()
@@ -60,8 +61,8 @@ if __name__ == '__main__':
             hs.append(h[0])
 
         # prediction set
-        h = plt.fill_between(t, itv_max, itv_min, color='green', alpha=0.7)
-
+        h = plt.fill_between(t, itv_max, itv_min, color='green', alpha=0.7, label=args.ours_name)
+        hs.append(h)
 
         # beautify
         ymin = args.y_min

@@ -18,10 +18,13 @@ interface IBasePS {
     function predict() external view returns (int256, int256); // no inputs as it uses all previous data
     function getThreshold() external view returns(int256);
     function getNoise() external view returns(int256 stateNoiseVar, int256 obsNoiseVar);
+    function getObsPrediction() external view returns(int256 predObsMean, int256 predObsVar);
+
     function getMeanMiscoverage() external view returns (int256 m);
 
     function setAlpha(int256 new_alpha) external;
     function getAlpha() external view returns (int256 alphaOut);
+    function getEvalData() external view returns (int256 lowerInterval, int256 upperInterval, int256 obsOut);
 
     //DBG
     function _rand() external view returns (uint256 p);

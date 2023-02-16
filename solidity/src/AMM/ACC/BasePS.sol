@@ -12,10 +12,9 @@ contract KF1D is ISeqScoreFunc {
     int256 public obsNoiseLogSig;
     int256 private learningRate;
 
-    /* int256 private transModel = 1; */
-    /* int256 private obsModel = 1; */
     int256 public stateMean;
     int256 public stateVar;
+    int256 public maxScore;
 
     
     constructor(int256 initStateNoiseLogSig, int256 initObsNoiseLogSig, int256 initLearningRate) {
@@ -25,7 +24,8 @@ contract KF1D is ISeqScoreFunc {
 
 	// the state is initialized to default values
 	stateMean = 0;
-	stateVar = 1 * 10**18;
+	stateVar = 1 * _scale();
+	maxScore = 1 * _scale();
     }
 
     
@@ -42,57 +42,52 @@ contract KF1D is ISeqScoreFunc {
 
     
     function update(int256 obs) public {
+
+	// update noise variances
 	{
-	// predict the current state before seeing the current observation
-	int256 stateNoiseSig = stateNoiseLogSig.exp();
-	int256 obsNoiseSig = obsNoiseLogSig.exp();
-	int256 stateNoiseVar = stateNoiseSig.mul(stateNoiseSig);
-	int256 obsNoiseVar = obsNoiseSig.mul(obsNoiseSig);
+	    int256 w = stateNoiseLogSig.exp();
+	    int256 v = obsNoiseLogSig.exp();
+	    
+	    int256 xi = (stateVar + w.mul(w) + v.mul(v)).sqrt();
+	    int256 xi3 = xi.mul(xi).mul(xi);
+	    int256 diffSq = (obs - stateMean).abs().mul((obs - stateMean).abs());
+	    
+	    // compute gradients of noise variances
+	    int256 gradStateNoiseLogSig = (xi.inv() - diffSq.div(xi3)).mul(w).div(xi).mul(w);
+	    int256 gradObsNoiseLogSig = (xi.inv() - diffSq.div(xi3)).mul(v).div(xi).mul(v);
 
-	int256 predStateMean = stateMean;
-	int256 predStateVar = stateVar + stateNoiseVar;
-
-	// update the current state based on the current observation
-	int256 meanInno = obs - predStateMean;
-	int256 varInno = predStateVar + obsNoiseVar;
-	int256 optKalmanGain = predStateVar.mul(varInno.inv());
-
-	stateMean = predStateMean + optKalmanGain.mul(meanInno);
-	stateVar = predStateVar - optKalmanGain.mul(predStateVar);
+	    // update
+	    stateNoiseLogSig = stateNoiseLogSig - learningRate.mul(gradStateNoiseLogSig);
+	    obsNoiseLogSig = obsNoiseLogSig - learningRate.mul(gradObsNoiseLogSig);
 	}
 
+	// update the current state
 	{
-	    // update noise variances
+	    // predict the current state before seeing the current observation
 	    int256 stateNoiseSig = stateNoiseLogSig.exp();
 	    int256 obsNoiseSig = obsNoiseLogSig.exp();
 	    int256 stateNoiseVar = stateNoiseSig.mul(stateNoiseSig);
 	    int256 obsNoiseVar = obsNoiseSig.mul(obsNoiseSig);
-	
-	    int256 sigAll = (stateVar + stateNoiseVar + obsNoiseVar).sqrt();
-	    int256 sigAll3 = sigAll.mul(sigAll).mul(sigAll);
-	    int256 diffSq = (obs - stateMean).abs().mul((obs - stateMean).abs());
-	    
-	// compute gradients of noise variances
-	/* int256 gradStateNoiseLogSig = (stateNoiseSig.mul(-2 * _scale())). */
-	/*     mul( sigAll.inv() - diffSq.mul(sigAll3.inv()) ). */
-	/*     mul( sigAll.inv() - (stateVar + stateNoiseVar).mul((2 * _scale()).inv()).mul(sigAll3.inv()) ). */
-	/*     mul( stateNoiseSig ); */
-	    int256 gradObsNoiseLogSig = (obsNoiseSig.mul(2 * _scale() )).
-		mul( sigAll.inv() - diffSq.mul(sigAll3.inv()) ).
-		mul( (stateVar + stateNoiseVar).mul((2 * _scale()).inv()).mul(sigAll3.inv()) ).
-		mul( obsNoiseSig );
-	
-	// update state and observation noise variances
-	/* int256 stateNoiseSig = (stateNoiseVar.sqrt() - learningRate.mul(gradStateNoiseSig)).abs(); */
-	/* stateNoiseVar = stateNoiseSig.mul(stateNoiseSig); */
-	    
-	/* stateNoiseLogSig = stateNoiseLogSig - learningRate.mul(gradStateNoiseLogSig); */
-	
-	/* int256 obsNoiseSig = (obsNoiseVar.sqrt() - learningRate.mul(gradObsNoiseSig)).abs(); */
-	/* obsNoiseVar = obsNoiseSig.mul(obsNoiseSig); */
-	    
-	    /* obsNoiseLogSig = obsNoiseLogSig - learningRate.mul(gradObsNoiseLogSig); */
+
+	    int256 predStateMean = stateMean;
+	    int256 predStateVar = stateVar + stateNoiseVar;
+
+	    // update the current state based on the current observation
+	    int256 meanInno = obs - predStateMean;
+	    int256 varInno = predStateVar + obsNoiseVar;
+	    int256 optKalmanGain = predStateVar.mul(varInno.inv());
+
+	    // update
+	    stateMean = predStateMean + optKalmanGain.mul(meanInno);
+	    stateVar = predStateVar - optKalmanGain.mul(predStateVar);
 	}
+
+	// update the max score
+	{
+	    (int256 predObsMean, int256 predObsVar) = predict();
+	    maxScore = (predObsVar.mul(PRBMathSD59x18.pi()).mul(2 * _scale())).sqrt().inv();
+	}
+
     }
 	
 
@@ -102,32 +97,34 @@ contract KF1D is ISeqScoreFunc {
 	    lowerInterval = PRBMathSD59x18.MIN_SD59x18;
 	    upperInterval = PRBMathSD59x18.MAX_SD59x18;
 	} else {
+	    t = t.mul(maxScore);
 	    (int256 predObsMean, int256 predObsVar) = predict();
 	    int256 predObsSig = predObsVar.sqrt();
 
 	    require(predObsSig > 0, "sig <= 0");
-	    require(t > 0, "t <= 0");
 	    
-	    int256 c = - (2 * PRBMathSD59x18.scale()).mul( t.ln() ) - (2 * PRBMathSD59x18.scale()).mul( predObsSig.ln() ) - (2 * PRBMathSD59x18.scale()).mul(PRBMathSD59x18.pi()).ln();
+	    int256 c = - (2 * _scale()).mul( t.ln() ) - (2 * _scale()).mul( predObsSig.ln() ) - (2 * _scale()).mul(PRBMathSD59x18.pi()).ln();
 	    if( c < 0 ){
-		// return a zero length interval
-		lowerInterval = predObsMean;
-		upperInterval = predObsMean;
+		// return the largest interval
+		/* lowerInterval = predObsMean; */
+		/* upperInterval = predObsMean; */
+		lowerInterval = PRBMathSD59x18.MIN_SD59x18;
+		upperInterval = PRBMathSD59x18.MAX_SD59x18;
 	    } else {
-		lowerInterval = predObsMean - predObsSig.mul(c);
-		upperInterval = predObsMean + predObsSig.mul(c);
+		lowerInterval = predObsMean - predObsSig.mul(c.sqrt());
+		upperInterval = predObsMean + predObsSig.mul(c.sqrt());
 	    }
 	}
     }
 
     function getScore(int256 obs) public view returns (int256 score) {
-	//score = norm.pdf(obs.item(), loc=state_pred['mu'].item(), scale=(state_pred['cov'] + tc.exp(self.obs_noise)).sqrt().item())
 	(int256 predObsMean, int256 predObsVar) = predict();
 	int256 sig = predObsVar.sqrt();
-	int256 Z = PRBMathSD59x18.pi().mul(2 * PRBMathSD59x18.scale()).sqrt().mul(sig);
+	int256 Z = PRBMathSD59x18.pi().mul(2 * _scale()).sqrt().mul(sig);
 	int256 ndiff = (obs - predObsMean).div(sig).abs();
-	int256 L = (- ndiff.mul(ndiff).div(2 * PRBMathSD59x18.scale())).exp();
+	int256 L = (- ndiff.mul(ndiff).div(2 * _scale())).exp();
 	score = L.div(Z);
+	score = score.div(maxScore);
 	require(score >= 0, "score < 0");
     }
 
@@ -149,11 +146,15 @@ contract SpecialMVP is IBasePS {
     int256 public _obs;
     int256 public _n_err;
     int256 public _n_obs;
-    
+    int256 public _lowerInterval;
+    int256 public _upperInterval;
 
     constructor(int256 alpha, uint numOfBins, int256 initEta) {
 	//_scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.01 * 10**18);
-	_scoreFunc = new KF1D(0, 0, 0.001 * 10**18);
+	/* _scoreFunc = new KF1D(0, 0, 0.001 * 10**18); */
+	//_scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.00001 * 10**18);
+	_scoreFunc = new KF1D(0 * 10**18, 0 * 10**18, 0.00001 * 10**18);
+	
 	_alpha = alpha;
 	_threshold = 0;
 	_numOfBins = numOfBins;
@@ -161,6 +162,8 @@ contract SpecialMVP is IBasePS {
 	_corrWeight = new int256[](_numOfBins);
 	_thresCount = new int256[](_numOfBins);
 	_obs = 0;
+	_lowerInterval = 0;
+	_upperInterval = 0;
 	_n_err = 0;
 	_n_obs = 0;
     }
@@ -174,12 +177,23 @@ contract SpecialMVP is IBasePS {
 	alphaOut = _alpha;
     }
 
+    function getEvalData() external view returns (int256 lowerInterval, int256 upperInterval, int256 obsOut) {
+	lowerInterval = _lowerInterval;
+	upperInterval = _upperInterval;
+	obsOut = _obs;
+    }
+
+
     function predict() public view returns(int256 lowerInterval, int256 upperInterval) {
 	(lowerInterval, upperInterval) = _scoreFunc.getInterval(_threshold);
     }
 
     function getThreshold() external view returns(int256 threshold) {
 	threshold = _threshold;
+    }
+
+    function getObsPrediction() external view returns(int256 predObsMean, int256 predObsVar) {
+	return _scoreFunc.predict();
     }
 
     function getNoise() external view returns(int256 stateNoiseVar, int256 obsNoiseVar) {
@@ -242,10 +256,10 @@ contract SpecialMVP is IBasePS {
 		}
 
 		if( _rand() <= b ) {
-		    return (int256(i) * _scale()).div(int256(_numOfBins) * _scale()) - _r.mul(int256(_numOfBins) * _scale()).inv();
+		    return _scale() - ((int256(i) * _scale()).div(int256(_numOfBins) * _scale()) - _r.mul(int256(_numOfBins) * _scale()).inv());
 		    /* return threshold; */
 		} else {
-		    return (int256(i) * _scale()).div(int256(_numOfBins) * _scale());
+		    return _scale() - (int256(i) * _scale()).div(int256(_numOfBins) * _scale());
 		    /* return threshold; */
 		}
 	    }
@@ -262,7 +276,7 @@ contract SpecialMVP is IBasePS {
     
     function miscoverage(int256 obs) public view returns (int256 e) {
 	int256 score = _scoreFunc.getScore(obs);
-	require(score <= 1 * _scale(), "score is larger than one");
+	//require(score <= 1 * _scale(), "score is larger than one");
 
 	if( score >= _threshold ) {
 	    e = 0;
@@ -277,7 +291,11 @@ contract SpecialMVP is IBasePS {
 
     function update(uint reserve0, uint reserve1) public returns(int256 threshold) {
 	int256 obs = int256(reserve0).div(int256(reserve1));
+	// keep data for evaluation
 	_obs = obs;
+	(_lowerInterval, _upperInterval) = predict();
+	
+	// update a threshold
 	threshold = update(obs);
     }
 
@@ -285,7 +303,7 @@ contract SpecialMVP is IBasePS {
 	int256 obs = int256(reserve0).div(int256(reserve1));
 
 	// update stats
-	uint binIdx = uint(_threshold.mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale())) / uint(_scale());
+	uint binIdx = uint((_scale() - _threshold).mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale())) / uint(_scale());
 	if(binIdx > _numOfBins - 1) {
 	    binIdx = _numOfBins - 1;
 	}

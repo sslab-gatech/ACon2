@@ -11,8 +11,8 @@ contract BasePSTest is Test {
     SpecialMVP public ps;
     
     function setUp() public {
-	scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.1 * 10**18);
-	ps = new SpecialMVP(0.1 * 10**18, 200, 0.9 * 10**18);
+	scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.00001 * 10**18);
+	ps = new SpecialMVP(0.1 * 10**18, 100, 0.9 * 10**18);
     }
 
     using PRBMathSD59x18 for int256;
@@ -25,6 +25,7 @@ contract BasePSTest is Test {
 
 	emit log_named_decimal_int("floor(1.1) =", PRBMathSD59x18.floor(1.1 * 10**18), 18);
 	emit log_named_uint("floor(1.1) =", uint(1.1 * 10**18) / 10**18);
+	emit log_named_int("int256(1) =", int256(1));
 
     }
 
@@ -74,9 +75,9 @@ contract BasePSTest is Test {
     }
 
     function testMVP() public {
-	for( uint i=0; i<100; i++ ) {
+	for( uint i=0; i<200; i++ ) {
 	    emit log_string("====================");
-	    int256 obs = int256(10 * 10**18 - i * 10**17);
+	    int256 obs = int256(10 * 10**18) - int256(i * 10**18);
 	    emit log_named_decimal_int("obs =", obs, 18);
 	    emit log_named_decimal_int("threshold before update =", ps._threshold(), 18);
 	    ps.update(obs);
@@ -93,7 +94,7 @@ contract BasePSTest is Test {
 	    emit log_named_decimal_int("state var after update =", ps._scoreFunc().stateVar(), 18);
 	    emit log_named_decimal_int("state noise sig =", ps._scoreFunc().stateNoiseLogSig().exp(), 18);
 	    emit log_named_decimal_int("obs noise sig =", ps._scoreFunc().obsNoiseLogSig().exp(), 18);
-
+	    emit log_named_decimal_int("max score =", ps._scoreFunc().maxScore(), 18);
 	}
     }
 
@@ -106,7 +107,7 @@ contract BasePSTest is Test {
     
     function testKF1D() public {
 
-	for( int i=0; i<10; i++ ) {
+	for( int i=0; i<200; i++ ) {
 	    emit log_string("====================");
 	    int256 obs = int256(i * 10**18);
 	    emit log_named_decimal_int("obs =", obs, 18);

@@ -66,6 +66,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     constructor() {
         factory = msg.sender;
 	// alpha, numOfBins, initEta
+	//basePS = new SpecialMVP(0.01 * 10**18, 150, 0.9 * 10**18); //TODO: change via function calls
 	basePS = new SpecialMVP(0.01 * 10**18, 100, 0.9 * 10**18); //TODO: change via function calls
 	//basePS = new SpecialMVP(0.1 * 10**18, 100, 0.9 * 10**18);
 	//basePS = new SpecialMVP(0.001 * 10**18, 100, 0.9 * 10**18);
@@ -211,6 +212,11 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     function getNoise() external view returns(int256 stateNoiseVar, int256 obsNoiseVar) {
 	return basePS.getNoise();
     }
+    
+    function getObsPrediction() external view returns(int256 predObsMean, int256 predObsVar) {
+	return basePS.getObsPrediction();
+    }
+
 
     function getMeanMiscoverage() external view returns (int256 m) {
 	return basePS.getMeanMiscoverage();
@@ -224,6 +230,9 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
 	return basePS.getAlpha();
     }
 
+    function getEvalData() external view returns (int256 lowerInterval, int256 upperInterval, int256 obsOut) {
+	return basePS.getEvalData();
+    }
     
     function _rand() external view returns (uint256 m) {
 	return basePS._rand();

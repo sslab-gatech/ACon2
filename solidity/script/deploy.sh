@@ -1,6 +1,12 @@
-ALPHA=$1
-for i in 1 2 3
+K=$1
+ALPHA=$2
+AMMNAMES=""
+
+for ((i=1; i<=$K; i++));
 do
+    AMMNAME="AMM${i}"
+    AMMNAMES="$AMMNAMES $AMMNAME"
+    
     # deploy factory
     forge create \
 	  src/AMM/UniswapV2/v2-core/contracts/UniswapV2Factory.sol:UniswapV2Factory \
@@ -8,7 +14,7 @@ do
 	  --constructor-args 0xa0ee7a142d267c1f36714e4a8f75612f20a79720 \
 	  --extra-output-files abi \
 	  --json > output/amm${i}_factory.json
-    echo "- AMM${i} factory is deployed."
+    echo "- ${AMMNAME} factory is deployed."
     FACTORYADDR=$( cat output/amm${i}_factory.json | jq -r ".deployedTo" )
 
     # get init code hash
@@ -23,11 +29,11 @@ do
 	  --constructor-args ${FACTORYADDR} 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 \
 	  --extra-output-files abi \
 	  --json > output/amm${i}_router.json
-    echo "- AMM${i} router is deployed."
+    echo "- ${AMMNAME} router is deployed."
 
     # run LPs
-    python3 script/lp.py --exp_name test_lp --address 0xa0ee7a142d267c1f36714e4a8f75612f20a79720 --private_key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 --market_name AMM${i}
-    echo "- AMM${i} liquidity is added."
+    python3 script/lp.py --exp_name test_lp --address 0xa0ee7a142d267c1f36714e4a8f75612f20a79720 --private_key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 --market_name $AMMNAME
+    echo "- ${AMMNAME} liquidity is added."
 done
 
 # deploy ACC
@@ -39,6 +45,8 @@ forge create \
 echo "- ACC is deployed."
 
 # init ACC
-python3 script/init_acc.py --exp_name init_acc --market_names AMM1 AMM2 AMM3 --beta 1 --alphas $ALPHA $ALPHA $ALPHA
+echo $AMMNAMES
+
+python3 script/init_acc.py --exp_name init_acc --market_names $AMMNAMES --alpha $ALPHA
 echo "- ACC is initialized."
 
