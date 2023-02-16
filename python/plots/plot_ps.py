@@ -235,7 +235,7 @@ if __name__ == '__main__':
         
         # beautify
         plt.xlabel('# observations', fontsize=args.fontsize)
-        plt.ylabel(f'miscoverage rate', fontsize=args.fontsize)
+        plt.ylabel(f'pseudo-miscoverage rate', fontsize=args.fontsize)
         plt.grid('on')
         plt.xticks(fontsize=args.fontsize*0.75)
         plt.yticks(fontsize=args.fontsize*0.75)

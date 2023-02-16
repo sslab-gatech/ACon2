@@ -64,7 +64,7 @@ class OneSigma:
             )
 
             # update the base model
-            self.base_out = self.base(label)
+            self.base_out = self.base.update(label, update_max=False)
             self.label = label
 
             

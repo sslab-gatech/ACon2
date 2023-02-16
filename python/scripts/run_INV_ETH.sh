@@ -1,3 +1,8 @@
+# as the data sequence is short, we don't have enough time to learn noise level before the price manipulation.
+# So, we choose exp(0.1), assuming that the algorithm has knowledge on the noise level at the beginning of the data
+# to have a right behavior of our algorithm under the price manipulation.
+NOISE=0.1 # exp(0.1) \approx 1
+
 # three sources
 screen -dm bash -c "
 python3.7 main.py \
@@ -6,6 +11,9 @@ python3.7 main.py \
 	  --data.start_time 2022-03-31T00:00 \
 	  --data.end_time 2022-05-31T23:59 \
 	  --data.time_step_sec 10 \
+	  --model_base.name KF1D KF1D KF1D \
+	  --model_base.state_noise_init $NOISE $NOISE $NOISE \
+	  --model_base.obs_noise_init $NOISE $NOISE $NOISE \
 	  --model_ps.name SpecialMVP SpecialMVP SpecialMVP \
 	  --model_ps.alpha 0.00333 0.00333 0.00333 \
 	  --model_ps.beta 1
@@ -19,6 +27,9 @@ python3.7 main.py \
 	  --data.start_time 2022-03-31T00:00 \
 	  --data.end_time 2022-05-31T23:59 \
 	  --data.time_step_sec 10 \
+	  --model_base.name KF1D \
+	  --model_base.state_noise_init $NOISE \
+	  --model_base.obs_noise_init $NOISE \
 	  --model_ps.name SpecialMVP \
 	  --model_ps.alpha 0.01 \
 	  --model_ps.beta 0
@@ -32,6 +43,9 @@ python3.7 main.py \
 	  --data.start_time 2022-03-31T00:00 \
 	  --data.end_time 2022-05-31T23:59 \
 	  --data.time_step_sec 10 \
+	  --model_base.name KF1D KF1D \
+	  --model_base.state_noise_init $NOISE $NOISE \
+	  --model_base.obs_noise_init $NOISE $NOISE \
 	  --model_ps.name SpecialMVP SpecialMVP \
 	  --model_ps.alpha 0.005 0.005 \
 	  --model_ps.beta 1
