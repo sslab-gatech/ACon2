@@ -1,7 +1,10 @@
 # as the data sequence is short, we don't have enough time to learn noise level before the price manipulation.
 # So, we choose exp(0.1), assuming that the algorithm has knowledge on the noise level at the beginning of the data
 # to have a right behavior of our algorithm under the price manipulation.
-NOISE=0.1 # exp(0.1) \approx 1
+
+NOISE=0.1 # exp(0.1) \approx 1, which makes a consensus set size around 0.5 on initial data
+# NOISE=4.6 # exp(4.6) \approx 100
+NCP=0.2735 # max(prices) - min(prices) at time t=1
 
 # three sources
 screen -dm bash -c "
@@ -16,6 +19,7 @@ python3.7 main.py \
 	  --model_base.obs_noise_init $NOISE $NOISE $NOISE \
 	  --model_ps.name SpecialMVP SpecialMVP SpecialMVP \
 	  --model_ps.alpha 0.00333 0.00333 0.00333 \
+	  --model_ps.nonconsensus_param	$NCP \
 	  --model_ps.beta 1
 "
 
@@ -32,6 +36,7 @@ python3.7 main.py \
 	  --model_base.obs_noise_init $NOISE \
 	  --model_ps.name SpecialMVP \
 	  --model_ps.alpha 0.01 \
+	  --model_ps.nonconsensus_param	$NCP \
 	  --model_ps.beta 0
 "
 
@@ -48,5 +53,6 @@ python3.7 main.py \
 	  --model_base.obs_noise_init $NOISE $NOISE \
 	  --model_ps.name SpecialMVP SpecialMVP \
 	  --model_ps.alpha 0.005 0.005 \
+	  --model_ps.nonconsensus_param	$NCP \
 	  --model_ps.beta 1
 "

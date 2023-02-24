@@ -74,8 +74,14 @@ if __name__ == '__main__':
     n_err_base = [r['prediction_summary']['n_err_base'] for r in results]
     n_obs_base = [r['prediction_summary']['n_obs_base'] for r in results]
 
-    itv_min = [max(0, r['prediction_summary']['ps_updated'][0]) for r in results]
-    itv_max = [min(max_val, r['prediction_summary']['ps_updated'][1]) for r in results]
+    # flip signs of invalid inf intervals
+    itv_min = [r['prediction_summary']['ps_updated'][0] for r in results]
+    itv_max = [r['prediction_summary']['ps_updated'][1] for r in results]
+    itv_min = [-np.inf if np.abs(v) == np.inf else v for v in itv_min]
+    itv_max = [np.inf if np.abs(v) == np.inf else v for v in itv_max]
+    
+    itv_min = [max(0, v) for v in itv_min]
+    itv_max = [min(max_val, v) for v in itv_max]
     if args.show_base_ps:
         itv_bps = [r['prediction_summary']['base_ps']  for r in results]
         

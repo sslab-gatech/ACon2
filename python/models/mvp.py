@@ -14,11 +14,10 @@ class SpecialMVP:
         self.args = args
         self.base = model_base
         self.eta = self.args.eta
-        # self.threshold = 0
-        # self.threshold = 1
         self.n_bins = self.args.n_bins
-        self.r = 1000 # not sensitiy on results
-        self.e = 1.0 # not sensitiy on results
+        self.r = 1000 # not sensitive on results
+        self.e = 1.0 # not sensitive on results
+        self.label_noise_factor = 0.0
         self.reset()
 
 
@@ -36,17 +35,18 @@ class SpecialMVP:
         self.norm_func = lambda n: np.sqrt((n+1) * (np.log2(n+2)**2))
         
         
-    def error(self, label):
+    def error(self, label, rescaling=1):
         score = self.base.score(label)
-        if score >= 1.0:
-            warnings.warn(f'score is larger than one: score = {score}')
-        return (score < self.threshold).astype('float')
 
-        # itv = self.predict()
-        # if itv[0] <= label and label <= itv[1]:
-        #     return 0.0
-        # else:
-        #     return 1.0
+        # if score > 1.0:
+        #     warnings.warn(f'score is larger than one: score = {score}')
+        # return (score*rescaling < self.threshold).astype('float')
+
+        itv = self.predict()
+        if itv[0] <= label and label <= itv[1]:
+            return 0.0
+        else:
+            return 1.0
 
 
     
@@ -81,6 +81,7 @@ class SpecialMVP:
                     pos = False
 
                 if w_cur * w_prev <= 0:
+
                     Z = np.abs(w_cur) + np.abs(w_prev)
                     if Z == 0:
                         b = 1
@@ -88,11 +89,12 @@ class SpecialMVP:
                         b = np.abs(w_cur) / Z
 
                     if np.random.rand() <= b:
-                        thres = (1.0 * i) / self.n_bins - 1.0 /(self.r * self.n_bins)
+                        thres = (i) / self.n_bins - 1.0 /(self.r * self.n_bins)
+                     
                         # return thres
                         return 1 - thres
                     else:
-                        thres = (1.0 * i) / self.n_bins
+                        thres = (i) / self.n_bins
                         # return thres
                         return 1 - thres
                     
@@ -102,53 +104,54 @@ class SpecialMVP:
                 return 1.0
             else:
                 return 0.0
-            # if pos:
-            #     return 0.0
-            # else:
-            #     return 1.0
 
 
+        # add noise to
+        # label_noisy = np.random.normal(loc=label, scale=self.label_noise_factor*label)
+        label_noisy = label
+        
         if not self.initialized:
-            self.base.init_state(label)
+            self.base.init_state(label_noisy)
             self.initialized = True
             self.threshold = find_threshold_mvp()
+            print("init th =", self.threshold)
         else:
             
-            # check error before update
-            err = self.error(label)
+            # check error before ps update
+            err = self.error(label_noisy)
             self.n_err += err
             self.n_obs += 1
-            
-            # predict
+            self.label = label
+            self.label_noisy = label_noisy
             self.ps = self.predict()            
+            
             
             # update stats
             bin_idx = min(int((1 - self.threshold) * self.n_bins + 0.5/self.r), self.n_bins - 1)
+            # bin_idx = min(int(self.threshold * self.n_bins + 0.5/self.r), self.n_bins - 1)
             
             self.thres_cnt[bin_idx] += 1
             self.corr_cnt[bin_idx] += self.args.alpha - err
 
-            # update a threshold
+            # recompute a threshold
             self.threshold = find_threshold_mvp()
-            
-            print(f'[MVP] threshold = {self.threshold:.4f}, score = {self.base.score(label):.4f}, size = {self.ps[1] - self.ps[0]:.4f}, '
-                  f'interval = [{self.ps[0]:.4f}, {self.ps[1]:.4f}], obs = {label:.4f}, '
+
+            ##TODO: print prediction + label (before update, previous threshold)
+            print(f'[MVP] threshold = {self.threshold:.4f}, score = {self.base.score(label_noisy):.4f}, size = {self.ps[1] - self.ps[0]:.4f}, '
+                  f'interval = [{self.ps[0]:.4f}, {self.ps[1]:.4f}], obs = {label:.4f}, obs_noisy = {label_noisy:.4f}, '
                   f'error_cur = {err}, '
                   f'error = {self.n_err / self.n_obs:.4f}'
             )
 
-
             # update the base model
-            self.base.update(label)
+            self.base.update(label_noisy)
 
-            self.label = label
-            # self.updated = True
             
-            # print(f'miscoverage = {self.n_err / self.n_obs:.4f}')
             
     def summary(self):
         return {
             'obs': self.label,
+            'label_noisy': self.label_noisy,
             'ps': self.ps,
             'n_err': self.n_err,
             'n_obs': self.n_obs,

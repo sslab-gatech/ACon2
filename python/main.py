@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument('--model_base.name', type=str, nargs='+', default=['KF1D', 'KF1D', 'KF1D'])
     parser.add_argument('--model_base.score_min', type=float, nargs='+', default=[0.0, 0.0, 0.0])
     parser.add_argument('--model_base.score_max', type=float, nargs='+', default=[1.0, 1.0, 1.0])
-    parser.add_argument('--model_base.lr', type=float, nargs='+', default=[1e-5, 1e-5, 1e-5])
+    parser.add_argument('--model_base.lr', type=float, nargs='+', default=[1e-3, 1e-3, 1e-3])
     parser.add_argument('--model_base.state_noise_init', type=float, nargs='+', default=[0.1, 0.1, 0.1])
     parser.add_argument('--model_base.obs_noise_init', type=float, nargs='+', default=[0.1, 0.1, 0.1])
     
@@ -52,10 +52,11 @@ def parse_args():
     # parser.add_argument('--model_ps.threshold_step', type=float, nargs='+', default=[0.01, 0.01, 0.00])
     parser.add_argument('--model_ps.n_bins', type=int, nargs='+', default=[100, 100, 100])
     
-    parser.add_argument('--model_ps.eta', type=float, default=0.9)
+    parser.add_argument('--model_ps.eta', type=float, default=5)
     parser.add_argument('--model_ps.alpha', type=float, nargs='+', default=[0.01, 0.01, 0.01])
     parser.add_argument('--model_ps.beta', type=int, default=1) 
     #parser.add_argument('--model_ps.T', type=int, default=50000)
+    parser.add_argument('--model_ps.nonconsensus_param', type=float, default=0.05) 
     
 
     ## training algorithm args
@@ -247,9 +248,9 @@ def run(args):
                   f"error = {model_ps.n_err / model_ps.n_obs:.4f}")
             results.append({'time': time, 'prediction_summary': model_ps.summary(), 'observation': obs})
 
-        if i%10000 == 0:
-            # save
-            pickle.dump({'results': results, 'args': args}, open(outputs_fn, 'wb'))
+        # if i%100000 == 0:
+        #     # save
+        #     pickle.dump({'results': results, 'args': args}, open(outputs_fn, 'wb'))
 
     # save
     pickle.dump({'results': results, 'args': args}, open(outputs_fn, 'wb'))
