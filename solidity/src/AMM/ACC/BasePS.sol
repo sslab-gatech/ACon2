@@ -57,7 +57,8 @@ contract KF1D is ISeqScoreFunc {
 	    int256 gradObsNoiseLogSig = (xi.inv() - diffSq.div(xi3)).mul(v).div(xi).mul(v);
 
 	    // update
-	    stateNoiseLogSig = stateNoiseLogSig - learningRate.mul(gradStateNoiseLogSig);
+	    /* stateNoiseLogSig = stateNoiseLogSig - learningRate.mul(gradStateNoiseLogSig); */
+	    stateNoiseLogSig = (obs.mul(int256(0.1 * 10**18))).ln();
 	    obsNoiseLogSig = obsNoiseLogSig - learningRate.mul(gradObsNoiseLogSig);
 	}
 
@@ -84,8 +85,8 @@ contract KF1D is ISeqScoreFunc {
 
 	// update the max score
 	{
-	    /* (int256 predObsMean, int256 predObsVar) = predict(); */
-	    /* maxScore = (predObsVar.mul(PRBMathSD59x18.pi()).mul(2 * _scale())).sqrt().inv(); */
+	    (int256 predObsMean, int256 predObsVar) = predict();
+	    maxScore = (predObsVar.mul(PRBMathSD59x18.pi()).mul(2 * _scale())).sqrt().inv().mul(2 * _scale());
 	}
 
     }
@@ -131,7 +132,7 @@ contract KF1D is ISeqScoreFunc {
 }
 
 
-contract SpecialMVP is IBasePS {
+contract MVP is IBasePS {
     using PRBMathSD59x18 for int256;
     
     KF1D public _scoreFunc;
@@ -153,7 +154,7 @@ contract SpecialMVP is IBasePS {
 	//_scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.01 * 10**18);
 	/* _scoreFunc = new KF1D(0, 0, 0.001 * 10**18); */
 	//_scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.00001 * 10**18);
-	_scoreFunc = new KF1D(0 * 10**18, 0 * 10**18, 0.00001 * 10**18);
+	_scoreFunc = new KF1D(0 * 10**18, 0 * 10**18, 0.001 * 10**18);
 	
 	_alpha = alpha;
 	_threshold = 0;
@@ -161,10 +162,6 @@ contract SpecialMVP is IBasePS {
 	_eta = initEta;
 	_corrWeight = new int256[](_numOfBins);
 	_thresCount = new int256[](_numOfBins);
-	for(uint i=0; i<_numOfBins; i++) {
-	    _corrWeight[i] = 0;
-	    _thresCount[i] = 0;
-	}
 	_obs = 0;
 	_lowerInterval = 0;
 	_upperInterval = 0;
@@ -261,10 +258,11 @@ contract SpecialMVP is IBasePS {
 
 		if( _rand() <= b ) {
 		    return 1*_scale() - ((int256(i) * _scale()).div(int256(_numOfBins) * _scale()) - _r.mul(int256(_numOfBins) * _scale()).inv());
-		    /* return threshold; */
+		    /* return ((int256(i) * _scale()).div(int256(_numOfBins) * _scale()) - _r.mul(int256(_numOfBins) * _scale()).inv()); */
+
 		} else {
 		    return 1*_scale() - (int256(i) * _scale()).div(int256(_numOfBins) * _scale());
-		    /* return threshold; */
+		    /* return (int256(i) * _scale()).div(int256(_numOfBins) * _scale()); */
 		}
 	    }
 	    prevWeight = currWeight;
@@ -303,39 +301,22 @@ contract SpecialMVP is IBasePS {
 	threshold = update(obs);
     }
 
-    /* function _updateState(uint reserve0, uint reserve1) public { */
-    /* 	int256 obs = int256(reserve0).div(int256(reserve1)); */
-
-    /* 	// update stats */
-    /* 	uint binIdx = uint((_scale() - _threshold).mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale())) / uint(_scale()); */
-    /* 	if(binIdx > _numOfBins - 1) { */
-    /* 	    binIdx = _numOfBins - 1; */
-    /* 	} */
-
-    /* 	int256 miscov = miscoverage(obs); */
-    /* 	_n_err = _n_err + miscov; */
-    /* 	_n_obs = _n_obs + 1 * _scale(); */
-	
-    /* 	_thresCount[binIdx] += 1 * _scale(); */
-    /* 	_corrWeight[binIdx] += (_alpha - miscov); */
-    /* } */
-
-    /* function _updateThreshold(int256 threshold) public { */
-    /* 	_threshold = threshold; */
-    /* } */
-
-    /* function _updateScoreFunc(uint reserve0, uint reserve1) public { */
-    /* 	int256 obs = int256(reserve0).div(int256(reserve1)); */
-    /* 	_scoreFunc.update(obs); */
-    /* } */
 
     function update(int256 obs) public returns(int256 threshold) {
-	
+
+
 	// update stats
-	uint binIdx = uint((1*_scale() - _threshold).mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale()).div(_scale()));
+	require(_threshold >= 0, "_threshold < 0");
+	require(_threshold <= _scale(), "_threshold > 1");
+	    
+	uint binIdx = uint((1*_scale() - _threshold).mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale())) / uint(_scale());
+	/* uint binIdx = uint((_threshold).mul(int256(_numOfBins) * _scale()) + _r.inv().div(2 * _scale())) / uint(_scale()); */
+
 	if(binIdx > _numOfBins - 1) {
 	    binIdx = _numOfBins - 1;
 	}
+	require(binIdx >= 0, "binIdx < 0");
+	require(binIdx < _numOfBins, "binIdx >= _numOfBins");
 
 	int256 miscov = miscoverage(obs);
 	_n_err += miscov;
@@ -350,6 +331,8 @@ contract SpecialMVP is IBasePS {
 
 	// update the score function
 	_scoreFunc.update(obs);
+
+
     }
 
     

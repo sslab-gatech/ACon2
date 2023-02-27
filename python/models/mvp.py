@@ -17,8 +17,8 @@ class SpecialMVP:
         # self.threshold = 0
         # self.threshold = 1
         self.n_bins = self.args.n_bins
-        self.r = 1000 # not sensitiy on results
-        self.e = 1.0 # not sensitiy on results
+        self.r = 1000 # not sensitive on results
+        self.e = 1.0 # not sensitive on results
         self.reset()
 
 

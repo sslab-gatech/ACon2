@@ -263,12 +263,12 @@ class Trader:
                 try:
                     if np.random.rand() < 0.5:
                         # sell ETH
-                        ETH_amount = int(np.random.uniform(0.1, 2) * 1e18)
+                        ETH_amount = int(np.random.uniform(0.1, 5) * 1e18)
                         gas_used, _ = self.swap_ETHforDAI(market_contracts, ETH_amount)
                         #print(f'[address = {self.address}] sell ETH = {self.w3.fromWei(ETH_amount, "ether"):.4f}')
                     else:
                         # buy ETH
-                        DAI_amount = int(np.random.uniform(0.1, 2) * 1e18)
+                        DAI_amount = int(np.random.uniform(0.1, 5) * 1e18)
                         gas_used, _ = self.swap_DAIforETH(market_contracts, DAI_amount)
                         #print(f'[address = {self.address}] sell DAI = {DAI_amount}')
 

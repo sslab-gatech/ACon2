@@ -25,19 +25,20 @@ if __name__ == '__main__':
     # parser.add_argument('--data_start_idx', type=int, default=0)
     # parser.add_argument('--data_end_idx', type=int, default=2000)
     parser.add_argument('--y_min', type=float, default=0.0)
-    parser.add_argument('--y_max', type=float, default=0.02)
+    parser.add_argument('--y_max', type=float, default=0.012)
     parser.add_argument('--tag', type=str, default='')
     parser.add_argument('--n_sources', type=int, default=3)
     #parser.add_argument('--alpha_list', type=str, nargs='+', default=['0d03', '0d15', '0d3'])
     parser.add_argument('--K', type=int, default=3)
     parser.add_argument('--alpha_list', type=str, nargs='+', default=['0.01', '0.001'])
     parser.add_argument('--alpha_color', type=str, nargs='+', default=['green', 'red', 'blue'])
-    parser.add_argument('--duration', type=int, default=1800)
+    parser.add_argument('--duration', type=int, default=900)
 
     args = parser.parse_args()
     
     # init
-    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_error_var_K_{args.K}_alpha{"_" if args.tag else ""}{args.tag}')
+    #fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_error_var_K_{args.K}_alpha{"_" if args.tag else ""}{args.tag}')
+    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_error_var_K_{args.K}_alphas')
     os.makedirs(os.path.dirname(fn_out), exist_ok=True)
 
     # read data
@@ -94,7 +95,7 @@ if __name__ == '__main__':
         # beautify
         plt.ylim((args.y_min, args.y_max))
         plt.xlabel('# observations', fontsize=args.fontsize)
-        plt.ylabel(f'miscoverage rate', fontsize=args.fontsize)
+        plt.ylabel(f'pseudo-miscoverage rate', fontsize=args.fontsize)
         plt.grid('on')
         plt.yticks(list(set(list(plt.yticks()[0]) + [float(e)  for e in args.alpha_list])))
         plt.legend(handles=hs, fontsize=args.fontsize)
