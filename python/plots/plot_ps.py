@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.dates as md
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 
 if __name__ == '__main__':
