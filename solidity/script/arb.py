@@ -249,18 +249,18 @@ class Arbitrageur:
             # for _ in range(1):
             market_name0_i, market_name1_i = np.random.choice(self.args.markets, 2, replace=False)
 
-            # get current balance
-            dai_price_market0_i, DAI_reserve0_i, ETH_reserve0_i = self.check_WETH_DAI_pair(self.markets[market_name0_i])
-            dai_price_market1_i, DAI_reserve1_i, ETH_reserve1_i = self.check_WETH_DAI_pair(self.markets[market_name1_i])
+            try:
+                # get current balance
+                dai_price_market0_i, DAI_reserve0_i, ETH_reserve0_i = self.check_WETH_DAI_pair(self.markets[market_name0_i])
+                dai_price_market1_i, DAI_reserve1_i, ETH_reserve1_i = self.check_WETH_DAI_pair(self.markets[market_name1_i])
 
-            # price_diff_i = abs(dai_price_market0_i - dai_price_market1_i)
-            # if price_diff_i > price_diff_max:
-            market_name0, market_name1 = market_name0_i, market_name1_i
-            dai_price_market0, DAI_reserve0, ETH_reserve0 = dai_price_market0_i, DAI_reserve0_i, ETH_reserve0_i
-            dai_price_market1, DAI_reserve1, ETH_reserve1 = dai_price_market1_i, DAI_reserve1_i, ETH_reserve1_i
-            # price_diff_max = price_diff_i
+                # price_diff_i = abs(dai_price_market0_i - dai_price_market1_i)
+                # if price_diff_i > price_diff_max:
+                market_name0, market_name1 = market_name0_i, market_name1_i
+                dai_price_market0, DAI_reserve0, ETH_reserve0 = dai_price_market0_i, DAI_reserve0_i, ETH_reserve0_i
+                dai_price_market1, DAI_reserve1, ETH_reserve1 = dai_price_market1_i, DAI_reserve1_i, ETH_reserve1_i
+                # price_diff_max = price_diff_i
 
-            try:            
                 self.arbitrage(
                     {'contract': self.markets[market_name0], 'token0': DAI_reserve0, 'token1': ETH_reserve0},
                     {'contract': self.markets[market_name1], 'token0': DAI_reserve1, 'token1': ETH_reserve1},
@@ -280,9 +280,9 @@ class Arbitrageur:
             except ValueError as e:
                 print(e)
                 continue
-            except requests.exceptions.ConnectionError as e:
-                print(e)
-                continue
+            # except requests.exceptions.ConnectionError as e:
+            #     print(e)
+            #     continue
 
 
 

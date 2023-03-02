@@ -18,6 +18,7 @@ class KF1D(tc.nn.Module):
         # self.obs_noise_sig_log = tc.nn.Parameter(tc.ones(self.dim, self.dim)*args.obs_noise_init)
         self.state_noise_sig_log = tc.ones(self.dim, self.dim)*args.state_noise_init
         self.obs_noise_sig_log = tc.ones(self.dim, self.dim)*args.obs_noise_init
+        self.state_inoise_sig_log = tc.ones(self.dim, self.dim)*args.state_noise_init
 
         self.trans_model = tc.tensor([[1.0]])
         self.obs_model = tc.tensor([[1.0]])
@@ -61,7 +62,7 @@ class KF1D(tc.nn.Module):
         pred = self.predict()
         mu = pred['mu'].item()
         sig = pred['cov'].sqrt().item()
-        self.score_max = norm.pdf(mu, loc=mu, scale=sig) 
+        self.score_max = norm.pdf(mu, loc=mu, scale=sig) * 2
         print(f'score_max = {self.score_max:.4f}, mu = {mu:.4f}, sig = {sig:.4f}')
         
     
@@ -115,6 +116,16 @@ class KF1D(tc.nn.Module):
         self.state_noise_sig_log = self.state_noise_sig_log - self.args.lr * grad_state_noise_sig_log
         self.obs_noise_sig_log = self.obs_noise_sig_log - self.args.lr * grad_obs_noise_sig_log
 
+        self.state_noise_sig_log = max(self.state_noise_sig_log, self.state_inoise_sig_log)
+        
+        # #TODO: generalize
+        # self.state_noise_sig_log = np.log(obs*0.1) 
+        # self.obs_noise_sig_log = np.log(obs*0.1)
+
+        # self.state_noise_sig_log = np.log(obs*0.1) 
+        # self.obs_noise_sig_log = self.obs_noise_sig_log - self.args.lr * grad_obs_noise_sig_log
+        
+
 
     # def update_noise_diff(self, obs):
     #     obs = self.encode(obs)
@@ -160,9 +171,6 @@ class KF1D(tc.nn.Module):
             self.update_score_max()
 
     
-    # def forward(self, obs):
-    #     return self.update(obs)
-
     
     def score(self, obs):
         obs = self.encode(obs)
@@ -190,9 +198,13 @@ class KF1D(tc.nn.Module):
         c = - 2*np.log(t) - 2*np.log(sig) - np.log(2*np.pi) + 1e-8 # avoid numerical error
         # an empty prediction set
         if c < 0:
-            #print(c, t, sig,  norm.pdf(mu, loc=mu, scale=sig))
-            interval = [-np.inf, np.inf]
-            return interval
-        interval = [mu - sig * np.sqrt(c), mu + sig * np.sqrt(c)]
+            # c = np.abs(c)
+            # interval = [mu + sig * np.sqrt(c), mu - sig * np.sqrt(c)] # invalid interval
+            interval = [np.inf, -np.inf]
+            
+            # interval = [-np.inf, np.inf]
+            # return interval
+        else:
+            interval = [mu - sig * np.sqrt(c), mu + sig * np.sqrt(c)]
         assert not any(np.isnan(interval)), f't = {t}, mu = {mu}, sig = {sig}, c = {c}'
         return interval

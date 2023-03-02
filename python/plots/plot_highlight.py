@@ -72,6 +72,16 @@ if __name__ == '__main__':
 
     itv_min = [max(0, r['prediction_summary']['ps_updated'][0]) for r in results]
     itv_max = [min(max_val, r['prediction_summary']['ps_updated'][1]) for r in results]
+
+    # convert invalid intervals
+    for i in range(len(itv_min)):
+        if itv_min[i] == np.inf:
+            itv_min[i] = 0
+    for i in range(len(itv_max)):
+        if itv_max[i] == -np.inf:
+            itv_max[i] = 15
+    
+    
     if args.show_base_ps:
         itv_bps = [r['prediction_summary']['base_ps']  for r in results]
 

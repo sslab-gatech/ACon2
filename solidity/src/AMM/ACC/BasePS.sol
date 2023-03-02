@@ -9,6 +9,7 @@ contract KF1D is ISeqScoreFunc {
     using PRBMathSD59x18 for int256;
     
     int256 public stateNoiseLogSig;
+    int256 public stateNoiseLogSigMin;
     int256 public obsNoiseLogSig;
     int256 private learningRate;
 
@@ -17,8 +18,9 @@ contract KF1D is ISeqScoreFunc {
     int256 public maxScore;
 
     
-    constructor(int256 initStateNoiseLogSig, int256 initObsNoiseLogSig, int256 initLearningRate) {
+    constructor(int256 initStateNoiseLogSig, int256 initStateNoiseLogSigMin, int256 initObsNoiseLogSig, int256 initLearningRate) {
 	stateNoiseLogSig = initStateNoiseLogSig;
+	stateNoiseLogSigMin = initStateNoiseLogSigMin;
 	obsNoiseLogSig = initObsNoiseLogSig;
 	learningRate = initLearningRate;
 
@@ -57,9 +59,14 @@ contract KF1D is ISeqScoreFunc {
 	    int256 gradObsNoiseLogSig = (xi.inv() - diffSq.div(xi3)).mul(v).div(xi).mul(v);
 
 	    // update
-	    /* stateNoiseLogSig = stateNoiseLogSig - learningRate.mul(gradStateNoiseLogSig); */
-	    stateNoiseLogSig = (obs.mul(int256(0.1 * 10**18))).ln();
+	    stateNoiseLogSig = stateNoiseLogSig - learningRate.mul(gradStateNoiseLogSig);
+	    /* stateNoiseLogSig = (obs.mul(int256(0.1 * 10**18))).ln(); */
 	    obsNoiseLogSig = obsNoiseLogSig - learningRate.mul(gradObsNoiseLogSig);
+
+	    // truncate
+	    if( stateNoiseLogSig < stateNoiseLogSigMin ) {
+		stateNoiseLogSig = stateNoiseLogSigMin;
+	    }
 	}
 
 	// update the current state
@@ -109,8 +116,10 @@ contract KF1D is ISeqScoreFunc {
 		// return the largest interval
 		/* lowerInterval = predObsMean; */
 		/* upperInterval = predObsMean; */
-		lowerInterval = PRBMathSD59x18.MIN_SD59x18;
-		upperInterval = PRBMathSD59x18.MAX_SD59x18;
+		
+		// return an invalid interval
+		lowerInterval = PRBMathSD59x18.MAX_SD59x18;
+		upperInterval = PRBMathSD59x18.MIN_SD59x18;
 	    } else {
 		lowerInterval = predObsMean - predObsSig.mul(c.sqrt());
 		upperInterval = predObsMean + predObsSig.mul(c.sqrt());
@@ -154,7 +163,7 @@ contract MVP is IBasePS {
 	//_scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.01 * 10**18);
 	/* _scoreFunc = new KF1D(0, 0, 0.001 * 10**18); */
 	//_scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.00001 * 10**18);
-	_scoreFunc = new KF1D(0 * 10**18, 0 * 10**18, 0.001 * 10**18);
+	_scoreFunc = new KF1D(0 * 10**18, -1 * 10**18, 0 * 10**18, 0.001 * 10**18);
 	
 	_alpha = alpha;
 	_threshold = 0;
@@ -280,10 +289,20 @@ contract MVP is IBasePS {
 	int256 score = _scoreFunc.getScore(obs);
 	//require(score <= 1 * _scale(), "score is larger than one");
 
-	if( score >= _threshold ) {
-	    e = 0;
+	/* // score based miscoverage */
+	/* if( score >= _threshold ) { */
+	/*     e = 0; */
+	/* } else { */
+	/*     e = 1 * _scale(); */
+	/* } */
+
+
+	// interval-based miscoverage
+	(int256 lowerInterval, int256 upperInterval) = predict();
+	if( (lowerInterval <= obs) && (obs <= upperInterval) ) {
+	    return 0;
 	} else {
-	    e = 1 * _scale();
+	    return 1 * _scale();
 	}
     }
 

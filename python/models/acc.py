@@ -20,115 +20,19 @@ class ACC:
     def initialized(self):
         return all([self.models[k].initialized for k in self.models.keys()])
 
-    
-    # @ property
-    # def updated(self):
-    #     return all([self.models[k].updated for k in self.models.keys()])
-
-    
+        
     def error(self, label):
         # assume the median is the consensued value
         label_c = np.median([label[k] for k in label.keys() if label[k] is not None])
-        score = int(np.sum([1.0 - self.models[k].error(label_c) for k in label.keys()]))
-        return float(score < len(self.models) - self.args.beta)
 
-        # itv, _ = self.predict()
-        # if itv[0] <= label_c and label_c <= itv[1]:
-        #     return 0.0
-        # else:
-        #     return 1.0
+        # score = int(np.sum([1.0 - self.models[k].error(label_c) for k in label.keys()]))
+        # return float(score < len(self.models) - self.args.beta)
 
-    
-    
-    
-    # def predict(self, search_step=1e-4):
-    #     # assume an interval; over-approximate the final interval
-    #     ps = [self.models[k].predict() for k in self.models.keys()]
-    #     print(ps)
-        
-    #     ps_lower = sorted([p[0] for p in ps])
-    #     ps_upper = sorted([p[1] for p in ps])
-
-    #     p_lower_out = -np.inf
-    #     for p_lower in ps_lower:
-    #         score = np.sum([1.0 - self.models[k].error(p_lower + self.small) for k in self.models.keys()])
-            
-    #         print(score, len(self.models), self.args.beta)
-    #         print('p_lower =', p_lower)
-    #         print('should have one =', [1.0 - self.models[k].error(p_lower + 0.001) for k in self.models.keys()])
-    #         print('should have one =', [1.0 - self.models[k].error(p_lower + 0.01) for k in self.models.keys()])
-    #         print('should have one =', [1.0 - self.models[k].error(p_lower + 0.1) for k in self.models.keys()])
-
-    #         if score >= len(self.models) - self.args.beta:
-    #             p_lower_out = p_lower
-    #             break
-        
-    #     p_upper_out = np.inf
-    #     for p_upper in reversed(ps_upper):
-    #         score = np.sum([1.0 - self.models[k].error(p_upper - self.small) for k in self.models.keys()])
-    #         if score >= len(self.models) - self.args.beta:
-    #             p_upper_out = p_upper
-    #             break
-    #     interval = [p_lower_out, p_upper_out]
-    #     return interval
-
-    
-    # def predict(self, search_step=1e-1):
-    #     # assume an interval; over-approximate the final interval
-    #     ps = []
-    #     keys = []
-    #     for k in self.models.keys():
-    #         ps_k = self.models[k].predict()
-    #         # print(f'{k} = [{ps_k[0]}, {ps_k[1]}]')
-    #         if all(np.isnan(ps_k) == False):
-    #             ps.append(ps_k)
-    #             keys.append(k)
-            
-    #     if len(ps) == 0:
-    #         return [-np.inf, np.inf]
-    #     else:
-    #         edges = sorted([p_i for p in ps for p_i in p])
-    #         ps_candi = []
-    #         prev_es = None
-    #         prev_d = None
-    #         for e1, e2 in zip(edges[:-1], edges[1:]):
-    #             score = np.sum([1.0 - self.models[k].error(np.mean([e1, e2])) for k in keys])
-    #             if score >= len(ps) - self.args.beta:
-    #                 ps_candi.append(np.mean([e1, e2]))
-
-    #             prev_es = [e1, e2]
-                    
-    #         if len(ps_candi) == 0:
-    #             return [-np.inf, np.inf]
-    #         else:
-    #             return [np.min(ps_candi), np.max(ps_candi)]
-
-            
-    #         # ps_lower = np.max([p[0] for p in ps])
-    #         # ps_upper = np.min([p[1] for p in ps])
-        
-    #         # score = np.sum([1.0 - self.models[k].error(np.mean([ps_lower, ps_upper])) for k in self.models.keys()])
-    #         # if score >= len(ps) - self.args.beta:
-    #         #     return [ps_lower, ps_upper]
-    #         # else:
-    #         #     return [-np.inf, np.inf]
-            
-                
-    #     # p_lower_out = -np.inf
-    #     # if score = np.sum([1.0 - self.models[k].error(p_lower) for k in self.models.keys()])
-        
-    #     # for p_lower in np.arange(ps_min, ps_max+search_step, search_step):
-    #     #     score = np.sum([1.0 - self.models[k].error(p_lower) for k in self.models.keys()])
-    #     #     if score >= len(self.models) - self.args.beta:
-    #     #         p_lower_out = p_lower
-    #     #         break
-                    
-    #     # p_upper_out = np.inf
-    #     # for p_upper in reversed(np.arange(ps_min, ps_max+search_step, search_step)):
-    #     #     score = np.sum([1.0 - self.models[k].error(p_upper) for k in self.models.keys()])
-    #     #     if score >= len(self.models) - self.args.beta:
-    #     #         p_upper_out = p_upper
-    #     #         break
+        itv, _ = self.predict()
+        if itv[0] <= label_c and label_c <= itv[1]:
+            return 0.0
+        else:
+            return 1.0
 
         
     def predict(self):
@@ -136,13 +40,26 @@ class ACC:
         bps = {}
         for k in self.models.keys():
             ps_k = self.models[k].predict()
+            
+            # add irreducible error
+            if not any(np.isinf(np.abs(ps_k))):
+            #     # # handle an invalid interval
+            #     # if ps_k[0] > ps_k[1]:
+            #     #     ps_k[0] = 0
+            #     #     ps_k[1] = 0
+            # else:
+                
+                m = np.mean(ps_k)
+                d = m - ps_k[0]
+                #d += m * self.args.nonconsensus_param
+                d += self.args.nonconsensus_param
+                ps_k = [m-d, m+d]
+
+
             bps[k] = ps_k
-            #print(f'{k} = [{ps_k[0]}, {ps_k[1]}]')
             if all(np.isnan(ps_k) == False):
                 ps.append(ps_k)
-            
-        # if len(ps) == 0:
-        #     return [-np.inf, np.inf], bps
+
         if len(ps) - self.args.beta <= 0:
             return [-np.inf, np.inf], bps
         else:
@@ -159,15 +76,23 @@ class ACC:
             # interval
             lower = np.inf
             upper = -np.inf
+
             for e, v in zip(edges, edges_vote):
                 if v >= len(ps) - self.args.beta:
-                    if lower > e:
+                    if lower >= e: #TODO
                         lower = e
-                    if upper < e:
+                    if upper <= e: #TODO
                         upper = e
+
             if lower > upper:
                 lower, upper = upper, lower
 
+            # return an invalid inf interval if we cannot make consensus
+            if lower == -np.inf: #TODO
+                lower = np.inf
+            if upper == np.inf:
+                upper = -np.inf
+            
             return [lower, upper], bps
         
             # edges_maj = []
@@ -181,11 +106,16 @@ class ACC:
 
             
     def init_or_update(self, label):
-
+            
         if self.initialized:
             # check error
-            self.n_err += self.error(label)
+            err = self.error(label)
+            self.n_err += err
             self.n_obs += 1
+            # self.n_obs_all += 1
+            # if self.n_obs_all == 100:
+            #     self.n_err = err
+            #     self.n_obs = 1
             self.ps, self.bps = self.predict()
             # print(f'ACC: error = {self.n_err}, n = {self.n_obs}')
 

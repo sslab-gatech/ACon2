@@ -25,20 +25,21 @@ if __name__ == '__main__':
     # parser.add_argument('--data_start_idx', type=int, default=0)
     # parser.add_argument('--data_end_idx', type=int, default=2000)
     parser.add_argument('--y_min', type=float, default=0.0)
-    parser.add_argument('--y_max', type=float, default=0.012)
+    parser.add_argument('--y_max', type=float, default=0.03)
     parser.add_argument('--tag', type=str, default='')
     parser.add_argument('--n_sources', type=int, default=3)
     #parser.add_argument('--alpha_list', type=str, nargs='+', default=['0d03', '0d15', '0d3'])
     parser.add_argument('--K', type=int, default=3)
     parser.add_argument('--alpha_list', type=str, nargs='+', default=['0.01', '0.001'])
     parser.add_argument('--alpha_color', type=str, nargs='+', default=['green', 'red', 'blue'])
-    parser.add_argument('--duration', type=int, default=900)
+    parser.add_argument('--duration', type=int, default=1800)
+    parser.add_argument('--start_idx', type=int, default=0) # skip the first junk part 
 
     args = parser.parse_args()
     
     # init
     #fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_error_var_K_{args.K}_alpha{"_" if args.tag else ""}{args.tag}')
-    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_error_var_K_{args.K}_alphas')
+    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot-error-var-K-{args.K}-alphas')
     os.makedirs(os.path.dirname(fn_out), exist_ok=True)
 
     # read data
@@ -73,12 +74,20 @@ if __name__ == '__main__':
         alpha_list.append(alpha_str)
         alpha_color_list.append(alpha_color)
 
+    
+        
     with PdfPages(fn_out + '.pdf') as pdf:
         hs = []
         plt.figure(1)
 
         # pseudo-miscoverage rate range
         for error_min, error_max, error_mean, t, alpha_str, color in zip(error_min_list, error_max_list, error_mean_list, t_list, alpha_list, alpha_color_list):
+
+            error_min = error_min[args.start_idx:]
+            error_max = error_max[args.start_idx:]
+            error_mean = error_mean[args.start_idx:]
+            t = t[args.start_idx:]
+
             alpha_acon2 = float(alpha_str)
 
             # mean

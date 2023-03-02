@@ -105,18 +105,18 @@ def print_data(args, exp_name):
     price_median = np.median(np.array(price_obs), 0)
 
     # time
-    print('time =', ' & '.join([f'{t}' for t in time]))
+    print('time &', ' & '.join([f'{t}' for t in time]))
 
     # price data
     for i, k in enumerate(key):
         price_i = [f'{p[i]:.4f}' for p in price]
-        print(f'{k} =', ' & '.join(price_i))
+        print(f'{k.split("/")[-1]} &', ' & '.join(price_i))
 
     # median
-    print('median =', ' & '.join([f'{p:.4f}' for p in price_median]))
+    print('median &', ' & '.join([f'{p:.4f}' for p in price_median]))
 
     # TWAP
-    print('TWAP =', ' & '.join([f'{p:.4f}' for p in price_TWAP]))
+    print('TWAP &', ' & '.join([f'{p:.4f}' for p in price_TWAP]))
 
     # BPS
     for i, k in enumerate(key):

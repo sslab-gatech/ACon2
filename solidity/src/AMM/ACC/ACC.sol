@@ -93,6 +93,12 @@ contract ACC is IACC {
 	if( lowerInterval > upperInterval ) {
 	    (lowerInterval, upperInterval) = (upperInterval, lowerInterval);
 	}
+
+	// return an invalid interval if we cannot make consensus
+	if( lowerInterval == PRBMathSD59x18.MIN_SD59x18 && upperInterval == PRBMathSD59x18.MAX_SD59x18 ) {
+	    lowerInterval = PRBMathSD59x18.MAX_SD59x18;
+	    upperInterval = PRBMathSD59x18.MIN_SD59x18;
+	}
     }
 
     function eval() external view returns(int256 lowerInterval, int256 upperInterval, int256[] memory lowerIntervals, int256[] memory upperIntervals, int256[] memory observations) {

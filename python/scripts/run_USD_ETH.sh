@@ -1,4 +1,5 @@
 NOISE=4.6 # exp(4.6) \approx 100
+NCP=0
 
 # one sources
 screen -dm bash -c "
@@ -10,6 +11,7 @@ python3.7 main.py \
 	  --model_base.obs_noise_init $NOISE \
 	  --model_ps.name SpecialMVP \
 	  --model_ps.alpha 0.01 \
+	  --model_ps.nonconsensus_param	$NCP \
 	  --model_ps.beta 0
 "
 
@@ -23,6 +25,7 @@ python3.7 main.py \
 	  --model_base.obs_noise_init $NOISE $NOISE \
 	  --model_ps.name SpecialMVP SpecialMVP \
 	  --model_ps.alpha 0.005 0.005 \
+	  --model_ps.nonconsensus_param	$NCP \
 	  --model_ps.beta 1
 "
 
@@ -36,6 +39,7 @@ python3.7 main.py \
 	  --model_base.obs_noise_init $NOISE $NOISE $NOISE \
 	  --model_ps.name SpecialMVP SpecialMVP SpecialMVP \
 	  --model_ps.alpha 0.00333 0.00333 0.00333 \
+	  --model_ps.nonconsensus_param	$NCP \
 	  --model_ps.beta 1
 "
 
@@ -49,5 +53,6 @@ python3.7 main.py \
 	  --model_base.obs_noise_init $NOISE $NOISE $NOISE \
 	  --model_ps.name OneSigma OneSigma OneSigma \
 	  --model_ps.alpha 0.00333 0.00333 0.00333 \
+	  --model_ps.nonconsensus_param	$NCP \
 	  --model_ps.beta 1
 "

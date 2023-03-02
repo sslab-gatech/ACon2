@@ -11,7 +11,7 @@ contract BasePSTest is Test {
     MVP public ps;
     
     function setUp() public {
-	scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.00001 * 10**18);
+	scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 1 * 10**18, 0.00001 * 10**18);
 	ps = new MVP(0.1 * 10**18, 100, 0.9 * 10**18);
     }
 

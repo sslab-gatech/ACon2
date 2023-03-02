@@ -33,7 +33,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # init
-    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_ps{"_" if args.tag else ""}{args.tag}')
+    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_ps{"-" if args.tag else ""}{args.tag}')
     os.makedirs(os.path.dirname(fn_out), exist_ok=True)
 
     # read data
