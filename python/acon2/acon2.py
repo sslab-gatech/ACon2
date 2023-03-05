@@ -2,12 +2,11 @@ import os, sys
 import numpy as np
 
 
-class ACC:
+class ACon2:
     def __init__(self, args, models):
         self.args = args
         self.models = models
         self.reset()
-        self.small = 1e-4
 
         
     def reset(self):
@@ -22,11 +21,8 @@ class ACC:
 
         
     def error(self, label):
-        # assume the median is the consensued value
+        # assume that the median is the consensued value for our evaluation purpose
         label_c = np.median([label[k] for k in label.keys() if label[k] is not None])
-
-        # score = int(np.sum([1.0 - self.models[k].error(label_c) for k in label.keys()]))
-        # return float(score < len(self.models) - self.args.beta)
 
         itv, _ = self.predict()
         if itv[0] <= label_c and label_c <= itv[1]:
@@ -43,18 +39,10 @@ class ACC:
             
             # add irreducible error
             if not any(np.isinf(np.abs(ps_k))):
-            #     # # handle an invalid interval
-            #     # if ps_k[0] > ps_k[1]:
-            #     #     ps_k[0] = 0
-            #     #     ps_k[1] = 0
-            # else:
-                
                 m = np.mean(ps_k)
                 d = m - ps_k[0]
-                #d += m * self.args.nonconsensus_param
                 d += self.args.nonconsensus_param
                 ps_k = [m-d, m+d]
-
 
             bps[k] = ps_k
             if all(np.isnan(ps_k) == False):
@@ -64,7 +52,6 @@ class ACC:
             return [-np.inf, np.inf], bps
         else:
             # vote
-            #edges = sorted([p_i for p in ps for p_i in p]) #TODO: sorting is not necessary
             edges = [p_i for p in ps for p_i in p]
             edges_vote = [0]*len(edges)
             for i, e in enumerate(edges):
@@ -72,38 +59,28 @@ class ACC:
                     if ps_i[0] <= e and e <= ps_i[1]:
                         edges_vote[i] += 1
 
-
             # interval
             lower = np.inf
             upper = -np.inf
 
             for e, v in zip(edges, edges_vote):
                 if v >= len(ps) - self.args.beta:
-                    if lower >= e: #TODO
+                    if lower >= e:
                         lower = e
-                    if upper <= e: #TODO
+                    if upper <= e:
                         upper = e
 
             if lower > upper:
                 lower, upper = upper, lower
 
-            # return an invalid inf interval if we cannot make consensus
-            if lower == -np.inf: #TODO
+            # return invalid inf interval if we cannot make consensus
+            if lower == -np.inf: 
                 lower = np.inf
             if upper == np.inf:
                 upper = -np.inf
             
             return [lower, upper], bps
         
-            # edges_maj = []
-            # for i, v in enumerate(edges_vote):
-            #     if v >= len(ps) - self.args.beta:
-            #         edges_maj.append(edges[i])
-            # if len(edges_maj) == 0:
-            #     return [-np.inf, np.inf], bps
-            # else:
-            #     return [np.min(edges_maj), np.max(edges_maj)], bps
-
             
     def init_or_update(self, label):
             
@@ -112,12 +89,7 @@ class ACC:
             err = self.error(label)
             self.n_err += err
             self.n_obs += 1
-            # self.n_obs_all += 1
-            # if self.n_obs_all == 100:
-            #     self.n_err = err
-            #     self.n_obs = 1
             self.ps, self.bps = self.predict()
-            # print(f'ACC: error = {self.n_err}, n = {self.n_obs}')
 
         # init or update
         for k in label.keys():

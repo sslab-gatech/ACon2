@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.dates as md
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
 if __name__ == '__main__':
 
@@ -60,9 +62,11 @@ if __name__ == '__main__':
         size_dist = [np.array(size_dict[k]) for k in size_dict.keys()]
         idk_cnt = []
         for i in range(len(size_dist)):
-            idk_idx = size_dist[i] == np.inf
+            idk_idx = np.abs(size_dist[i]) == np.inf
             idk_cnt.append(np.mean(idk_idx))
             size_dist[i] = size_dist[i][~idk_idx]
+            print(f'mean = {np.mean(size_dist[i])}')
+            
         print(np.max(size_dist[1]))
         print(idk_cnt)
         width = 0.2

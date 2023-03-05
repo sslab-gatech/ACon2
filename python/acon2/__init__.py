@@ -1,6 +1,4 @@
 from .kf import KF1D
-from .ewa import EWA1D
-from .rci import RCI
-from .acc import ACC
+from .acon2 import ACon2
 from .mvp import SpecialMVP
 from .sigma import OneSigma
