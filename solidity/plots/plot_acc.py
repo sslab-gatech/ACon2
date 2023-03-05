@@ -17,11 +17,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='data plot')
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, default='read_acc')
-    parser.add_argument('--fig_root', type=str, default='output/figs')
+    parser.add_argument('--fig_root', type=str, default='output/figs/acon2')
     parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
     parser.add_argument('--fontsize', type=int, default=15)
     parser.add_argument('--data_start_idx', type=int, default=0)
-    parser.add_argument('--data_end_idx', type=int, default=4000)
+    parser.add_argument('--data_end_idx', type=int, default=-1)
     parser.add_argument('--y_min', type=float, default=0.0)
     parser.add_argument('--y_max', type=float, default=3.0)
     parser.add_argument('--max_val', type=float, default=100)
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # init
-    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_ps{"_" if args.tag else ""}{args.tag}')
+    fn_out = os.path.join(args.fig_root, args.exp_name, f'plot_ps{"-" if args.tag else ""}{args.tag}')
     os.makedirs(os.path.dirname(fn_out), exist_ok=True)
 
     # read data

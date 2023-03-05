@@ -8,11 +8,11 @@ import "prb-math/PRBMathSD59x18.sol";
 
 contract BasePSTest is Test {
     KF1D public scoreFunc;
-    SpecialMVP public ps;
+    MVP public ps;
     
     function setUp() public {
-	scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 0.00001 * 10**18);
-	ps = new SpecialMVP(0.1 * 10**18, 100, 0.9 * 10**18);
+	scoreFunc = new KF1D(1 * 10**18, 1 * 10**18, 1 * 10**18, 0.00001 * 10**18);
+	ps = new MVP(0.1 * 10**18, 100, 0.9 * 10**18);
     }
 
     using PRBMathSD59x18 for int256;
@@ -26,6 +26,8 @@ contract BasePSTest is Test {
 	emit log_named_decimal_int("floor(1.1) =", PRBMathSD59x18.floor(1.1 * 10**18), 18);
 	emit log_named_uint("floor(1.1) =", uint(1.1 * 10**18) / 10**18);
 	emit log_named_int("int256(1) =", int256(1));
+	emit log_named_uint("threshold index 12 =", uint(12 * PRBMathSD59x18.scale()) / uint(PRBMathSD59x18.scale()));
+
 
     }
 
@@ -87,14 +89,17 @@ contract BasePSTest is Test {
 	    emit log_string("after pred====================");
 
 	    emit log_named_decimal_int("threshold after update =", ps._threshold(), 18);
-	    emit log_named_decimal_int("lowerInterval =", l, 18);
-	    emit log_named_decimal_int("upperInterval =", u, 18);
-	    emit log_named_decimal_int("interval length =", u - l, 18);
-	    emit log_named_decimal_int("state mean after update =", ps._scoreFunc().stateMean(), 18);
-	    emit log_named_decimal_int("state var after update =", ps._scoreFunc().stateVar(), 18);
-	    emit log_named_decimal_int("state noise sig =", ps._scoreFunc().stateNoiseLogSig().exp(), 18);
-	    emit log_named_decimal_int("obs noise sig =", ps._scoreFunc().obsNoiseLogSig().exp(), 18);
-	    emit log_named_decimal_int("max score =", ps._scoreFunc().maxScore(), 18);
+	    emit log_named_decimal_int("score =", ps._scoreFunc().getScore(obs), 18);
+
+	    /* emit log_named_decimal_int("lowerInterval =", l, 18); */
+	    /* emit log_named_decimal_int("upperInterval =", u, 18); */
+	    /* emit log_named_decimal_int("interval length =", u - l, 18); */
+	    /* emit log_named_decimal_int("state mean after update =", ps._scoreFunc().stateMean(), 18); */
+	    /* emit log_named_decimal_int("state var after update =", ps._scoreFunc().stateVar(), 18); */
+	    /* emit log_named_decimal_int("state noise sig =", ps._scoreFunc().stateNoiseLogSig().exp(), 18); */
+	    /* emit log_named_decimal_int("obs noise sig =", ps._scoreFunc().obsNoiseLogSig().exp(), 18); */
+	    /* emit log_named_decimal_int("max score =", ps._scoreFunc().maxScore(), 18); */
+	    
 	}
     }
 

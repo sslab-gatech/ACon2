@@ -17,7 +17,6 @@ class SpecialMVP:
         self.n_bins = self.args.n_bins
         self.r = 1000 # not sensitive on results
         self.e = 1.0 # not sensitive on results
-        self.label_noise_factor = 0.0
         self.reset()
 
 

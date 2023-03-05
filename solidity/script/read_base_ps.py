@@ -207,8 +207,8 @@ class PSReader:
             error = pair.functions.getMeanMiscoverage().call() / 10**18
             alpha = pair.functions.getAlpha().call() / 10**18
 
-            print(f'[{args.market_name}, alpha = {alpha}] obs mean = {pred_obs_mean:.4f}, obs var = {pred_obs_var:.4f}, state noise var = {state_noise_var:.4f}, obs. noise var = {obs_noise_var:.4f}, '
-                  f'threshold = {threshold:.4f}, price interval = ({lower_interval:.4f}, {upper_interval:.4f}), length = {upper_interval - lower_interval}, '
+            print(f'[{args.market_name}, alpha = {alpha:.4f}] obs mean = {pred_obs_mean:.4f}, obs var = {pred_obs_var:.4f}, state noise var = {state_noise_var:.4f}, obs. noise var = {obs_noise_var:.4f}, '
+                  f'threshold = {threshold:.4f}, price interval = ({lower_interval:.4f}, {upper_interval:.4f}), length = {upper_interval - lower_interval:.4f}, '
                   f'error = {error:.4f}'
             )
             time.sleep(self.args.time_interval_sec)

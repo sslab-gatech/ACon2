@@ -30,7 +30,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     uint public kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
 
     // base PS
-    SpecialMVP public basePS;
+    MVP public basePS;
 
     uint private unlocked = 1;
     modifier lock() {
@@ -66,10 +66,10 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     constructor() {
         factory = msg.sender;
 	// alpha, numOfBins, initEta
-	//basePS = new SpecialMVP(0.01 * 10**18, 150, 0.9 * 10**18); //TODO: change via function calls
-	basePS = new SpecialMVP(0.01 * 10**18, 100, 0.9 * 10**18); //TODO: change via function calls
-	//basePS = new SpecialMVP(0.1 * 10**18, 100, 0.9 * 10**18);
-	//basePS = new SpecialMVP(0.001 * 10**18, 100, 0.9 * 10**18);
+	//basePS = new MVP(0.01 * 10**18, 150, 0.9 * 10**18); //TODO: change via function calls
+	basePS = new MVP(0.01 * 10**18, 20, 5.0 * 10**18); //TODO: change via function calls
+	//basePS = new MVP(0.1 * 10**18, 100, 0.9 * 10**18);
+	//basePS = new MVP(0.001 * 10**18, 100, 0.9 * 10**18);
     }
 
     // called once by the factory at time of deployment

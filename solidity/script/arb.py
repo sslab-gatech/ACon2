@@ -1,3 +1,7 @@
+"""
+This is only demonstration purpose; we recommand to write a smart contract for efficient arbitrage.
+"""
+
 import os
 import sys
 import time
@@ -7,6 +11,9 @@ import time
 import json
 import warnings
 import itertools
+
+import web3
+import requests
 
 from web3 import Web3
 
@@ -235,43 +242,55 @@ class Arbitrageur:
     def run(self):
         while True:
 
-            price_diff_max = 0
-            # for market_name0_i, market_name1_i in itertools.combinations(self.args.markets, 2):
-            for _ in range(1):
-                market_name0_i, market_name1_i = np.random.choice(self.args.markets, 2, replace=False)
+            t_start = time.time()
             
+            # price_diff_max = 0
+            # for market_name0_i, market_name1_i in itertools.combinations(self.args.markets, 2):
+            # for _ in range(1):
+            market_name0_i, market_name1_i = np.random.choice(self.args.markets, 2, replace=False)
+
+            try:
                 # get current balance
                 dai_price_market0_i, DAI_reserve0_i, ETH_reserve0_i = self.check_WETH_DAI_pair(self.markets[market_name0_i])
                 dai_price_market1_i, DAI_reserve1_i, ETH_reserve1_i = self.check_WETH_DAI_pair(self.markets[market_name1_i])
 
-                price_diff_i = abs(dai_price_market0_i - dai_price_market1_i)
-                if price_diff_i > price_diff_max:
-                    market_name0, market_name1 = market_name0_i, market_name1_i
-                    dai_price_market0, DAI_reserve0, ETH_reserve0 = dai_price_market0_i, DAI_reserve0_i, ETH_reserve0_i
-                    dai_price_market1, DAI_reserve1, ETH_reserve1 = dai_price_market1_i, DAI_reserve1_i, ETH_reserve1_i
-                    price_diff_max = price_diff_i
-                    
-                
-            try:            
+                # price_diff_i = abs(dai_price_market0_i - dai_price_market1_i)
+                # if price_diff_i > price_diff_max:
+                market_name0, market_name1 = market_name0_i, market_name1_i
+                dai_price_market0, DAI_reserve0, ETH_reserve0 = dai_price_market0_i, DAI_reserve0_i, ETH_reserve0_i
+                dai_price_market1, DAI_reserve1, ETH_reserve1 = dai_price_market1_i, DAI_reserve1_i, ETH_reserve1_i
+                # price_diff_max = price_diff_i
+
                 self.arbitrage(
                     {'contract': self.markets[market_name0], 'token0': DAI_reserve0, 'token1': ETH_reserve0},
                     {'contract': self.markets[market_name1], 'token0': DAI_reserve1, 'token1': ETH_reserve1},
                     self.args.min_benefit_DAI
                 )
-            except web3.exceptions.ContractLogicError:
+
+                # dai_price_market0_after, _, _ = self.check_WETH_DAI_pair(self.markets[market_name0])
+                # dai_price_market1_after, _, _ = self.check_WETH_DAI_pair(self.markets[market_name1])
+
+                dai_price_market0_after = 0
+                dai_price_market1_after = 0
+
+            except web3.exceptions.ContractLogicError as e:
                 print('transactions are likely reverted')
+                print(e)
                 continue
+            except ValueError as e:
+                print(e)
+                continue
+            # except requests.exceptions.ConnectionError as e:
+            #     print(e)
+            #     continue
 
 
-            dai_price_market0_after, _, _ = self.check_WETH_DAI_pair(self.markets[market_name0])
-            dai_price_market1_after, _, _ = self.check_WETH_DAI_pair(self.markets[market_name1])
 
-            print(f'[arb: {self.args.address[:6]}] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
+            print(f'[arb: {self.args.address[:6]}, {time.time() - t_start:.2f} sec.] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
                   f'DAI balance = {self.w3.fromWei(self.check_DAI_balance(), "ether"):.4f}, '
                   f'WETH balance = {self.check_WETH_balance()}, '
                   f'{market_name0} DAI / WETH price = {dai_price_market0:.4f} -> {dai_price_market0_after:.4f}, ',
                   f'{market_name1} DAI / WETH price = {dai_price_market1:.4f} -> {dai_price_market1_after:.4f}',
-
             )
             
 
@@ -285,7 +304,7 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266')
     parser.add_argument('--private_key', type=str, default='0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
     parser.add_argument('--markets', type=str, nargs='+', default=['UniswapV2', 'SushiSwap'])
-    parser.add_argument('--time_interval_sec', type=int, default=0.01)
+    parser.add_argument('--time_interval_sec', type=int, default=0.0)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)
@@ -295,5 +314,6 @@ if __name__ == '__main__':
     #parser.add_argument('--arb_amount_DAI', type=int, default=0.1*1e18)
     args = parser.parse_args()
     assert(len(args.markets) >= 2)
+    print(args)
     arb = Arbitrageur(args)
     arb.run()

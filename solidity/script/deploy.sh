@@ -1,5 +1,6 @@
 K=$1
 ALPHA=$2
+EXPNAME=$3
 AMMNAMES=""
 
 for ((i=1; i<=$K; i++));
@@ -32,7 +33,7 @@ do
     echo "- ${AMMNAME} router is deployed."
 
     # run LPs
-    python3 script/lp.py --exp_name test_lp --address 0xa0ee7a142d267c1f36714e4a8f75612f20a79720 --private_key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 --market_name $AMMNAME
+    python3 script/lp.py --exp_name "$EXPNAME/lp" --address 0xa0ee7a142d267c1f36714e4a8f75612f20a79720 --private_key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 --market_name $AMMNAME
     echo "- ${AMMNAME} liquidity is added."
 done
 
@@ -47,6 +48,6 @@ echo "- ACC is deployed."
 # init ACC
 echo $AMMNAMES
 
-python3 script/init_acc.py --exp_name init_acc --market_names $AMMNAMES --alpha $ALPHA
+python3 script/init_acc.py --exp_name "$EXPNAME/init_acc" --market_names $AMMNAMES --alpha $ALPHA
 echo "- ACC is initialized."
 
