@@ -60,7 +60,6 @@ contract KF1D is ISeqScoreFunc {
 
 	    // update
 	    stateNoiseLogSig = stateNoiseLogSig - learningRate.mul(gradStateNoiseLogSig);
-	    /* stateNoiseLogSig = (obs.mul(int256(0.1 * 10**18))).ln(); */
 	    obsNoiseLogSig = obsNoiseLogSig - learningRate.mul(gradObsNoiseLogSig);
 
 	    // truncate

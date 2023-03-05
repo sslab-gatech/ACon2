@@ -58,7 +58,7 @@ if __name__ == '__main__':
     parser.add_argument('--address', type=str, default='0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f')
     parser.add_argument('--private_key', type=str, default='0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97')
     parser.add_argument('--market_names', type=str, nargs='+', default='UniswapV2')
-    parser.add_argument('--initial_sleep_interval_sec', type=int, default=240.0)
+    parser.add_argument('--initial_sleep_interval_sec', type=int, default=1800.0)
     parser.add_argument('--time_interval_sec', type=int, default=60.0)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')

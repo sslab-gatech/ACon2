@@ -273,6 +273,13 @@ class Arbitrageur:
                 dai_price_market0_after = 0
                 dai_price_market1_after = 0
 
+                print(f'[arb: {self.args.address[:6]}, {time.time() - t_start:.2f} sec.] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
+                      f'DAI balance = {self.w3.fromWei(self.check_DAI_balance(), "ether"):.4f}, '
+                      f'WETH balance = {self.check_WETH_balance()}, '
+                      f'{market_name0} DAI / WETH price = {dai_price_market0:.4f} -> {dai_price_market0_after:.4f}, ',
+                      f'{market_name1} DAI / WETH price = {dai_price_market1:.4f} -> {dai_price_market1_after:.4f}',
+                )
+
             except web3.exceptions.ContractLogicError as e:
                 print('transactions are likely reverted')
                 print(e)
@@ -286,12 +293,6 @@ class Arbitrageur:
 
 
 
-            print(f'[arb: {self.args.address[:6]}, {time.time() - t_start:.2f} sec.] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
-                  f'DAI balance = {self.w3.fromWei(self.check_DAI_balance(), "ether"):.4f}, '
-                  f'WETH balance = {self.check_WETH_balance()}, '
-                  f'{market_name0} DAI / WETH price = {dai_price_market0:.4f} -> {dai_price_market0_after:.4f}, ',
-                  f'{market_name1} DAI / WETH price = {dai_price_market1:.4f} -> {dai_price_market1_after:.4f}',
-            )
             
 
             time.sleep(self.args.time_interval_sec)

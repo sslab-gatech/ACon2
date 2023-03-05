@@ -255,12 +255,14 @@ class Trader:
                 )
                 
             else:
-                # randomly choose a market
-                market_name = np.random.choice(self.args.market_names)
-                market_contracts = self.market_contracts[market_name]
-
-                # randomly sell or buy
                 try:
+                    
+                    # randomly choose a market
+                    market_name = np.random.choice(self.args.market_names)
+                    market_contracts = self.market_contracts[market_name]
+
+                    # randomly sell or buy
+
                     if np.random.rand() < 0.5:
                         # sell ETH
                         ETH_amount = int(np.random.uniform(0.1, 5) * 1e18)
@@ -274,6 +276,14 @@ class Trader:
 
                     if gas_used is not None and len(gas_used_history) <= 600:
                         gas_used_history.append(gas_used)
+
+                    # get current balance
+                    print(f'[trader] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
+                          f'DAI balance = {self.w3.fromWei(self.check_DAI_balance(), "ether"): .4f}, '
+                          f'{market_name} WETH / DAI price = {self.check_WETH_DAI_pair(market_contracts)}, '
+                          f'gas used (for {len(gas_used_history)} TXs) = {np.mean(gas_used_history):.4f} +- {np.std(gas_used_history):.4f}'
+                    )
+
                 except web3.exceptions.ContractLogicError as e:
                     print('transactions are likely reverted')
                     print(e)
@@ -282,12 +292,6 @@ class Trader:
                     print(e)
                     continue
 
-                # get current balance
-                print(f'[trader] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '
-                      f'DAI balance = {self.w3.fromWei(self.check_DAI_balance(), "ether"): .4f}, '
-                      f'{market_name} WETH / DAI price = {self.check_WETH_DAI_pair(market_contracts)}, '
-                      f'gas used (for {len(gas_used_history)} TXs) = {np.mean(gas_used_history):.4f} +- {np.std(gas_used_history):.4f}'
-                )
                 
             time.sleep(self.args.time_interval_sec)
 
