@@ -1,6 +1,5 @@
 import os, sys
 import argparse
-import torch as tc
 import copy
 import warnings
 import pickle
@@ -54,8 +53,6 @@ def parse_args():
     args = parser.parse_args()
     args = utils.to_tree_namespace(args)
     args.exp_name = f'{args.exp_name}_K_{len(args.data.path)}_beta_{args.model_ps.beta}'
-    args.device = tc.device('cpu') if args.cpu else tc.device('cuda:0')
-    args = utils.propagate_args(args, 'device')
     args = utils.propagate_args(args, 'exp_name')
     args = utils.propagate_args(args, 'output_root')
     

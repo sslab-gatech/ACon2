@@ -3,20 +3,14 @@ import pickle
 import numpy as np
 import argparse
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-import matplotlib.dates as md
-
+sys.path.append(".")
 import data
 
-from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 
 def print_data(args, exp_name):
     
     # read outputs
-    outputs = pickle.load(open(os.path.join(args.output_root, exp_name, 'out.pk'), 'rb'))
+    outputs = pickle.load(open(os.path.join(args.alg_output_root, exp_name, 'out.pk'), 'rb'))
     exp_args = outputs['args']
     results = outputs['results']
 
@@ -27,9 +21,9 @@ def print_data(args, exp_name):
     else:
         name = 'ACC'
     market_names = [k.split('/')[2].split('_')[0] for k in key]
-    print(market_names)
+    print('sources =', market_names)
     price_name = '/'.join(key[0].split('/')[1].split('_')[1:])
-    print(price_name)
+    #print(price_name)
     
     # process results
     K = results[0]['prediction_summary']['K']
@@ -131,7 +125,7 @@ def print_data(args, exp_name):
             itv_ACC.append('[$-\infty$,$\infty$]')
         else:
             itv_ACC.append(f'[{mn:.2f},{mx:.2f}]')            
-    print('ACC =', ' & '.join(itv_ACC))
+    print('ACon2 =', ' & '.join(itv_ACC))
 
 
     
@@ -148,6 +142,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('--TWAP_data', type=str, default='data/price_ETH_INV/Keep3rV2SushiSwap')
     parser.add_argument('--output_root', type=str, default='output')
+    parser.add_argument('--alg_output_root', type=str, default='output')
     parser.add_argument('--ours_name', type=str, default='ACon$^2$ (ours)')
     parser.add_argument('--fig_root', type=str, default='figs')
     parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
@@ -167,6 +162,6 @@ if __name__ == '__main__':
     max_val = 20
 
     for exp_name in args.exp_names:
-        print(exp_name)
+        print(f'exp name = {exp_name}')
         print_data(args, exp_name)
         print()

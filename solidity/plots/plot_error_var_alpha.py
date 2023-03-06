@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--K', type=int, default=3)
     parser.add_argument('--alpha_list', type=str, nargs='+', default=['0.01', '0.001'])
     parser.add_argument('--alpha_color', type=str, nargs='+', default=['green', 'red', 'blue'])
-    parser.add_argument('--duration', type=int, default=1800)
+    parser.add_argument('--duration', type=int, default=3600)
     parser.add_argument('--start_idx', type=int, default=0) # skip the first junk part 
 
     args = parser.parse_args()

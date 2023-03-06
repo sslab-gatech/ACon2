@@ -20,6 +20,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='online learning')
     parser.add_argument('--exp_name', type=str, default='single_source_INV_ETH_SushiSwap')
     parser.add_argument('--output_root', type=str, default='output')
+    parser.add_argument('--alg_output_root', type=str, default='output')
     parser.add_argument('--ours_name', type=str, default='ACon$^2$')
     parser.add_argument('--fig_root', type=str, default='figs')
     parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
@@ -38,12 +39,11 @@ if __name__ == '__main__':
     parser.add_argument('--no_ours', action='store_true')
 
     args = parser.parse_args()
-    #color_list = ['C3', 'C4', 'C8', 'C9']
     color_list = ['r', 'b', 'gold', 'C9']
     max_val = 1e4
     
     # read outputs
-    outputs = pickle.load(open(os.path.join(args.output_root, args.exp_name, 'out.pk'), 'rb'))
+    outputs = pickle.load(open(os.path.join(args.alg_output_root, args.exp_name, 'out.pk'), 'rb'))
     exp_args = outputs['args']
     results = outputs['results']
 
@@ -58,9 +58,9 @@ if __name__ == '__main__':
     else:
         name = 'ACC'
     market_names = [k.split('/')[2].split('_')[0] for k in key]
-    print(market_names)
+    #print(market_names)
     price_name = '/'.join(key[0].split('/')[1].split('_')[1:])
-    print(price_name)
+    #print(price_name)
     
     # process results
     K = results[0]['prediction_summary']['K']
@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
             out_str = f'[{time_i}] ACC = [{itv_min_i:.2f}, {itv_max_i:.2f}]'
             for k, v in data_table[time_i].items():
-                if k is not 'acc':
+                if k != 'acc':
                     key_name = k.split("/")[-1]
                     out_str += f', {key_name} = {v if v is not None else 0:.4f}'
                     out_str += f', BPS_{key_name} = [{itv_bps_i[k][0]:.2f}, {itv_bps_i[k][1]:.2f}]'
@@ -207,7 +207,7 @@ if __name__ == '__main__':
         
         plt.savefig(fn_out+'.png', bbox_inches='tight')
         pdf.savefig(bbox_inches='tight')
-        print(fn_out)
+        print(f'[consensus set visualization] {fn_out}')
 
     # plot the miscoverage rate
     with PdfPages(fn_out_miscoverage + '.pdf') as pdf:
@@ -252,4 +252,4 @@ if __name__ == '__main__':
         plt.legend(handles=hs, fontsize=args.fontsize)
         plt.savefig(fn_out_miscoverage+'.png', bbox_inches='tight')
         pdf.savefig(bbox_inches='tight')
-        print(fn_out_miscoverage)
+        print(f'[miscoverage plot] {fn_out_miscoverage}')

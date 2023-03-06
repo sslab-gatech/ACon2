@@ -12,6 +12,7 @@ import matplotlib.dates as md
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
+sys.path.append(".")
 import data
 
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
@@ -23,6 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('--exp_name', type=str, default='three_sources_INV_ETH_SushiSwap_UniswapV2_coinbase_K_3_beta_1')
     parser.add_argument('--TWAP_data', type=str, default='data/price_ETH_INV/Keep3rV2SushiSwap')
     parser.add_argument('--output_root', type=str, default='output')
+    parser.add_argument('--alg_output_root', type=str, default='output')
     parser.add_argument('--ours_name', type=str, default='ACon$^2$ (ours)')
     parser.add_argument('--fig_root', type=str, default='figs')
     parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
@@ -44,7 +46,7 @@ if __name__ == '__main__':
     max_val = 20
     
     # read outputs
-    outputs = pickle.load(open(os.path.join(args.output_root, args.exp_name, 'out.pk'), 'rb'))
+    outputs = pickle.load(open(os.path.join(args.alg_output_root, args.exp_name, 'out.pk'), 'rb'))
     exp_args = outputs['args']
     results = outputs['results']
 
@@ -58,9 +60,9 @@ if __name__ == '__main__':
     else:
         name = 'ACC'
     market_names = [k.split('/')[2].split('_')[0] for k in key]
-    print(market_names)
+    #print(market_names)
     price_name = '/'.join(key[0].split('/')[1].split('_')[1:])
-    print(price_name)
+    #print(price_name)
     
     # process results
     K = results[0]['prediction_summary']['K']
@@ -133,11 +135,11 @@ if __name__ == '__main__':
 
             out_str = f'[{time_i}] ACC = [{itv_min_i:.2f}, {itv_max_i:.2f}]'
             for k, v in data_table[time_i].items():
-                if k is not 'acc':
+                if k != 'acc':
                     key_name = k.split("/")[-1]
                     out_str += f', {key_name} = {v if v is not None else 0:.4f}'
                     out_str += f', BPS_{key_name} = [{itv_bps_i[k][0]:.2f}, {itv_bps_i[k][1]:.2f}]'
-            print(out_str)
+            #print(out_str)
 
 
     # plot prediction set results
@@ -151,7 +153,7 @@ if __name__ == '__main__':
         if not args.no_ours:
             h = plt.fill_between(time[::args.step], itv_max[::args.step], itv_min[::args.step], color='green', alpha=0.4, label=args.ours_name)
             hs.append(h)
-            print(itv_max)
+            #print(itv_max)
         
         # observations
         price_obs = []
@@ -187,5 +189,5 @@ if __name__ == '__main__':
 
         plt.savefig(fn_out+'.png', bbox_inches='tight')
         pdf.savefig(bbox_inches='tight')
-        print(fn_out)
+        print(f'[highlight fig] {fn_out}')
 

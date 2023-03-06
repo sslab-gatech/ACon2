@@ -4,8 +4,6 @@ import warnings
 import pickle
 import glob
 
-import torch as tc
-from torch.utils.data import DataLoader
 
 class NoObservation(Exception):
     pass

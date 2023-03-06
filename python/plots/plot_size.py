@@ -23,6 +23,8 @@ if __name__ == '__main__':
                             'three_sources_INV_ETH_SushiSwap_UniswapV2_coinbase_K_3_beta_1',
                         ])
     parser.add_argument('--output_root', type=str, default='output')
+    parser.add_argument('--alg_output_root', type=str, default='output')
+
     parser.add_argument('--fig_root', type=str, default='figs')
     # parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
     parser.add_argument('--fontsize', type=int, default=15)
@@ -47,7 +49,7 @@ if __name__ == '__main__':
     # read outputs
     size_dict = {}
     for exp_name in args.exp_names:
-        outputs = pickle.load(open(os.path.join(args.output_root, exp_name, 'out.pk'), 'rb'))
+        outputs = pickle.load(open(os.path.join(args.alg_output_root, exp_name, 'out.pk'), 'rb'))
         K = int(exp_name[exp_name.find('K_')+2])
         size_dict[K] = [r['prediction_summary']['ps_updated'][1] - r['prediction_summary']['ps_updated'][0] for r in outputs['results']]
 
@@ -65,10 +67,10 @@ if __name__ == '__main__':
             idk_idx = np.abs(size_dist[i]) == np.inf
             idk_cnt.append(np.mean(idk_idx))
             size_dist[i] = size_dist[i][~idk_idx]
-            print(f'mean = {np.mean(size_dist[i])}')
+            print(f'mean(size) = {np.mean(size_dist[i])}')
             
-        print(np.max(size_dist[1]))
-        print(idk_cnt)
+        #print(np.max(size_dist[1]))
+        print('IDK count =', idk_cnt)
         width = 0.2
 
         # box plots for size distributions
@@ -99,6 +101,6 @@ if __name__ == '__main__':
         # plt.legend(handles=hs, fontsize=fontsize, labels=['size', 'IDK'])
         plt.savefig(fn_out+'.png', bbox_inches='tight')
         pdf.savefig(bbox_inches='tight')
-        print(fn_out)
+        print(f'[size distribution] {fn_out}')
 
     sys.exit()

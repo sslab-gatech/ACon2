@@ -1,12 +1,6 @@
 import os, sys
 import warnings
 import numpy as np
-from scipy.stats import multinomial
-
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.special import logsumexp
-
 
 class OneSigma:
     def __init__(self, args, model_base):
@@ -33,7 +27,7 @@ class OneSigma:
     
     def predict(self):
         obs_pred = self.base.predict()
-        mu, sig = obs_pred['mu'].detach().squeeze(), obs_pred['cov'].sqrt().detach().squeeze()
+        mu, sig = np.squeeze(obs_pred['mu']), np.sqrt(np.squeeze(obs_pred['cov']))
         interval = [mu - sig, mu + sig]
         return interval
 

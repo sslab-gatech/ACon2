@@ -1,15 +1,15 @@
 DURATION=3600
 
-for K in 3 4 5
+for K in 4 3
 do
     AMMNAMES=""
     for ((j=1; j<=$K; j++));
     do
 	AMMNAMES="$AMMNAMES AMM${j}"
     done
-    for ALPHA in 0.01 0.001
+    for ALPHA in 0.001 0.01
     do
-	for i in {1..3}
+	for i in {4..5}
 	do
 	    echo "========== K = ${K}, alpha = ${ALPHA}, iter = ${i} =========="
 	    EXPNAME="acon2_K_${K}_alpha_${ALPHA//./d}_iter_${i}_duration_${DURATION}"
