@@ -1,4 +1,5 @@
 OUTPUTDIR=${PWD}/output_docker
+mkdir -p $OUTPUTDIR
 echo "output directory: $OUTPUTDIR"
 DOCKERCMD="docker run -v ${OUTPUTDIR}:/app/output --rm acon2:v1"
 NOISE=0.1 # exp(0.1) \approx 1, which makes a consensus set size around 0.5 on initial data

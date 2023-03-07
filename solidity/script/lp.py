@@ -126,7 +126,7 @@ class LP:
         
     def swap_ETHforDAI_UniswapV2(self, amount_in_wei):
 
-        warnings.warn('DBG')
+        #TODO
         router02_addr = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D' # Uniswapv2
         router02 = self.w3.eth.contract(router02_addr, abi=open('script/abi_uniswap_v2_router02.json').read())
 

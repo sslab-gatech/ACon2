@@ -1,4 +1,5 @@
 OUTPUTDIR=${PWD}/output_docker
+mkdir -p $OUTPUTDIR
 DOCKERCMD="docker run -v ${OUTPUTDIR}:/app/output --rm acon2:v1"
 ALGOUTPUTDIR=output_CR
 

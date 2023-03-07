@@ -1,3 +1,4 @@
+#!/bin/bash
 K=$1
 EXPNAME=$2
 AMMNAMES=""

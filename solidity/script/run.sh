@@ -1,6 +1,8 @@
+#!/bin/bash
+
 DURATION=3600
 
-for K in 4 3
+for K in 5 #5 4 3
 do
     AMMNAMES=""
     for ((j=1; j<=$K; j++));
@@ -9,7 +11,7 @@ do
     done
     for ALPHA in 0.001 0.01
     do
-	for i in {4..5}
+	for i in 4 5 #{4..5}
 	do
 	    echo "========== K = ${K}, alpha = ${ALPHA}, iter = ${i} =========="
 	    EXPNAME="acon2_K_${K}_alpha_${ALPHA//./d}_iter_${i}_duration_${DURATION}"
@@ -19,7 +21,7 @@ do
 	    sleep 5
 
 	    echo "run a sim"
-	    ./script/run_sim.sh $K $ALPHA $EXPNAME
+	    screen -S sim -dm bash -c "./script/run_sim.sh $K $ALPHA $EXPNAME"
 
 	    echo "run a reader"
 	    screen -S reader -dm bash -c "python3 script/read_acc.py --exp_name $EXPNAME --market_names ${AMMNAMES}"
@@ -28,7 +30,7 @@ do
 	    sleep $DURATION
 	    screen -X -S miners quit
 	    screen -X -S adv quit
-	    rm /tmp/.tmp* -rf
+	    rm -rf /tmp/.tmp*
 	done
     done
 done

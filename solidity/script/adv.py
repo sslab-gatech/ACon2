@@ -44,12 +44,9 @@ class Adversary(Trader):
                   f'{market_name} WETH / DAI previous price = {price_prev}, WETH / DAI price = {self.check_WETH_DAI_pair(market_contracts)}'
             )
 
-            # # buy ETH again
-            # print(min_DAI_out)
-            # self.swap_DAIforETH(market_contracts, min_DAI_out)
-
+            # attack only once
             break
-            time.sleep(self.args.time_interval_sec)
+            #time.sleep(self.args.time_interval_sec)
 
 
 if __name__ == '__main__':

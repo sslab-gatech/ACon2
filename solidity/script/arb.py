@@ -46,8 +46,6 @@ class Arbitrageur:
         # buy enough DAI
         self.swap_ETHforDAI_UniswapV2(int(100 * 1e18))
 
-        # self.swap_ETHforDAI(self.markets[args.markets[0]], int(10 * 1e18)) #TODO
-
         np.random.seed(args.seed)
 
         
@@ -139,25 +137,7 @@ class Arbitrageur:
             })
         else:
             raise NotImplementedError
-            # assert(amount_in_dai is not None)
-
-            # min_amount_in = int(market['router02'].functions.getAmountsIn(amount_in_dai, swap_path).call()[1]*0.9)
-            # fun = market['router02'].functions.swapETHForExactTokens(
-            #     amount_in_dai,
-            #     swap_path,
-            #     self.address,
-            #     deadline,
-            # )
-            # tx = fun.buildTransaction({
-            #     'from': self.address,
-            #     'nonce': self.w3.eth.getTransactionCount(self.address),
-            #     'value': min_amount_in,
-            #     'gas': 2000000, #TODO
-            #     'gasPrice': Web3.toWei('50', 'gwei'), #TODO
-            # })
-            
-
-            
+                        
             
         signed_tx = self.w3.eth.account.signTransaction(tx, self.args.private_key)
         emitted = self.w3.eth.sendRawTransaction(signed_tx.rawTransaction)
@@ -200,16 +180,6 @@ class Arbitrageur:
         self.nonce += 1
 
 
-    # def arbitrage_naive(self, market_from, market_to, amount_dai):
-
-    #     # print(amount_dai)
-    #     swap_path = [self.WETH_addr, self.DAI_addr]
-    #     amount_ETH = int(market_from['router'].functions.getAmountsIn(amount_dai, swap_path).call()[0])
-
-    #     self.swap_ETHforDAI(market_from, amount_ETH)
-    #     self.swap_DAIforETH(market_to, amount_dai)
-
-        
     def arbitrage(self, market0_info, market1_info, min_diff):
         # token0: DAI, token1: ETH
         price0 = market0_info['token0'] / market0_info['token1']
@@ -244,9 +214,6 @@ class Arbitrageur:
 
             t_start = time.time()
             
-            # price_diff_max = 0
-            # for market_name0_i, market_name1_i in itertools.combinations(self.args.markets, 2):
-            # for _ in range(1):
             market_name0_i, market_name1_i = np.random.choice(self.args.markets, 2, replace=False)
 
             try:
@@ -254,12 +221,9 @@ class Arbitrageur:
                 dai_price_market0_i, DAI_reserve0_i, ETH_reserve0_i = self.check_WETH_DAI_pair(self.markets[market_name0_i])
                 dai_price_market1_i, DAI_reserve1_i, ETH_reserve1_i = self.check_WETH_DAI_pair(self.markets[market_name1_i])
 
-                # price_diff_i = abs(dai_price_market0_i - dai_price_market1_i)
-                # if price_diff_i > price_diff_max:
                 market_name0, market_name1 = market_name0_i, market_name1_i
                 dai_price_market0, DAI_reserve0, ETH_reserve0 = dai_price_market0_i, DAI_reserve0_i, ETH_reserve0_i
                 dai_price_market1, DAI_reserve1, ETH_reserve1 = dai_price_market1_i, DAI_reserve1_i, ETH_reserve1_i
-                # price_diff_max = price_diff_i
 
                 self.arbitrage(
                     {'contract': self.markets[market_name0], 'token0': DAI_reserve0, 'token1': ETH_reserve0},
@@ -269,7 +233,7 @@ class Arbitrageur:
 
                 # dai_price_market0_after, _, _ = self.check_WETH_DAI_pair(self.markets[market_name0])
                 # dai_price_market1_after, _, _ = self.check_WETH_DAI_pair(self.markets[market_name1])
-
+                # skip
                 dai_price_market0_after = 0
                 dai_price_market1_after = 0
 
@@ -287,14 +251,6 @@ class Arbitrageur:
             except ValueError as e:
                 print(e)
                 continue
-            # except requests.exceptions.ConnectionError as e:
-            #     print(e)
-            #     continue
-
-
-
-            
-
             time.sleep(self.args.time_interval_sec)
 
 
@@ -309,12 +265,8 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, required=True)
-    #parser.add_argument('--min_benefit_WETH', type=int, default=1e10)
-    #parser.add_argument('--min_benefit_DAI', type=int, default=0.0001)
     parser.add_argument('--min_benefit_DAI', type=int, default=1e-9)
-    #parser.add_argument('--arb_amount_DAI', type=int, default=0.1*1e18)
     args = parser.parse_args()
     assert(len(args.markets) >= 2)
-    print(args)
     arb = Arbitrageur(args)
     arb.run()

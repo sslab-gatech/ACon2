@@ -1,3 +1,5 @@
+#!/bin/bash
+
 K=$1
 ALPHA=$2
 EXPNAME=$3
