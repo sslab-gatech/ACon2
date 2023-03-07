@@ -1,10 +1,11 @@
 #!/bin/bash
+mkdir output
 
 K=$1
-ALPHA=$2
-EXPNAME=$3
+EXPNAME=$2
 AMMNAMES=""
 
+##----------- trader
 for ((i=1; i<=$K; i++));
 do
     AMMNAME="AMM${i}"
@@ -12,7 +13,7 @@ do
     
     # deploy factory
     forge create \
-	  src/AMM/UniswapV2/v2-core/contracts/UniswapV2Factory.sol:UniswapV2Factory \
+	  src/AMM/UniswapV2Original/v2-core/contracts/UniswapV2Factory.sol:UniswapV2Factory \
 	  --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 \
 	  --constructor-args 0xa0ee7a142d267c1f36714e4a8f75612f20a79720 \
 	  --extra-output-files abi \
@@ -27,7 +28,7 @@ do
 
     # deploy router02
     forge create \
-	  src/AMM/UniswapV2/periphery/contracts/UniswapV2Router02.sol:UniswapV2Router02 \
+	  src/AMM/UniswapV2Original/periphery/contracts/UniswapV2Router02.sol:UniswapV2Router02 \
 	  --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 \
 	  --constructor-args ${FACTORYADDR} 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 \
 	  --extra-output-files abi \
@@ -39,17 +40,8 @@ do
     echo "- ${AMMNAME} liquidity is added."
 done
 
-# deploy ACon2
-forge create \
-      src/AMM/ACon2/ACon2.sol:ACon2 \
-      --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 \
-      --extra-output-files abi \
-      --json > output/acon2.json
-echo "- ACon2 is deployed."
 
-# init ACon2
-echo $AMMNAMES
+##----------- trader
+screen -S trader -dm bash -c "python3 script/trader.py --exp_name ${EXPNAME}/trader1 --address 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 --private_key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --market_name $AMMNAMES"
 
-python3 script/init_acon2.py --exp_name "$EXPNAME/init_acon2" --market_names $AMMNAMES --alpha $ALPHA
-echo "- ACon2 is initialized."
-
+# this is for collecting gas usage for the trader, so we don't run any arbitrageur and adversary.

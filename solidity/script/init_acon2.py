@@ -57,13 +57,13 @@ if __name__ == '__main__':
     DAI = w3.eth.contract(DAI_addr, abi=open('script/abi_DAI.json').read())
     WETH = w3.eth.contract(WETH_addr, abi=open('script/abi_WETH.json').read())
 
-    # init ACC
-    acc_addr = json.loads(open(os.path.join(args.output_dir, f'acc.json')).read())['deployedTo']
-    acc = w3.eth.contract(acc_addr, abi=open('out/ACC.sol/ACC.abi.json').read())
+    # init ACon2
+    acon2_addr = json.loads(open(os.path.join(args.output_dir, f'acon2.json')).read())['deployedTo']
+    acon2 = w3.eth.contract(acon2_addr, abi=open('out/ACon2.sol/ACon2.abi.json').read())
     # set sources
     for market_name in args.market_names:
         pair_addr = market_contracts[market_name]['factory'].functions.getPair(WETH_addr, DAI_addr).call()
-        fun = acc.functions.addSource(pair_addr)
+        fun = acon2.functions.addSource(pair_addr)
         tx = fun.buildTransaction({
             'from': address,
             'nonce': nonce,
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         nonce += 1
 
     # set beta
-    fun = acc.functions.setBeta(args.beta)
+    fun = acon2.functions.setBeta(args.beta)
     tx = fun.buildTransaction({
         'from': address,
         'nonce': nonce,

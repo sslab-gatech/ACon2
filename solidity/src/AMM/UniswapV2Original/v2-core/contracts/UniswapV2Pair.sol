@@ -8,7 +8,6 @@ import './libraries/UQ112x112.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IUniswapV2Factory.sol';
 import './interfaces/IUniswapV2Callee.sol';
-import 'src/AMM/ACon2/BasePS.sol';
 
 contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     using SafeMath  for uint;
@@ -28,9 +27,6 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     uint public price0CumulativeLast;
     uint public price1CumulativeLast;
     uint public kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
-
-    // base PS
-    MVP public basePS;
 
     uint private unlocked = 1;
     modifier lock() {
@@ -65,8 +61,6 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
 
     constructor() {
         factory = msg.sender;
-	// alpha, numOfBins, initEta
-	basePS = new MVP(0.01 * 10**18, 20, 5.0 * 10**18); //TODO
     }
 
     // called once by the factory at time of deployment
@@ -192,48 +186,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         _update(balance0, balance1, _reserve0, _reserve1);
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
 
-	// update a base PS
-	basePS.update(reserve0, reserve1);
     }
 
-    // return a prediction set
-    function predict() external view returns (int256, int256) {
-	return basePS.predict();
-    }
-
-    
-    function getThreshold() external view returns(int256 threshold) {
-	return basePS.getThreshold();
-    }
-
-    function getNoise() external view returns(int256 stateNoiseVar, int256 obsNoiseVar) {
-	return basePS.getNoise();
-    }
-    
-    function getObsPrediction() external view returns(int256 predObsMean, int256 predObsVar) {
-	return basePS.getObsPrediction();
-    }
-
-
-    function getMeanMiscoverage() external view returns (int256 m) {
-	return basePS.getMeanMiscoverage();
-    }
-
-    function setAlpha(int256 new_alpha) external {
-	return basePS.setAlpha(new_alpha);
-    }
-
-    function getAlpha() external view returns (int256 alphaOut) {
-	return basePS.getAlpha();
-    }
-
-    function getEvalData() external view returns (int256 lowerInterval, int256 upperInterval, int256 obsOut) {
-	return basePS.getEvalData();
-    }
-    
-    function _rand() external view returns (uint256 m) {
-	return basePS._rand();
-    }
 
     // force balances to match reserves
     function skim(address to) external lock {

@@ -3,7 +3,7 @@
 pragma solidity >=0.5;
 
 import "forge-std/Test.sol";
-import "../src/AMM/ACC/BasePS.sol";
+import "../src/AMM/ACon2/BasePS.sol";
 import "prb-math/PRBMathSD59x18.sol";
 
 contract BasePSTest is Test {

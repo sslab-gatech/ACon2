@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-interface IACC {
+interface IACon2 {
     //function getMeanMiscoverage() external view returns (int256 m);
     function addSource(address source) external;
     function getSources() external view returns (uint sourcesOut);

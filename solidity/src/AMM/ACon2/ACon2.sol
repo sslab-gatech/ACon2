@@ -3,11 +3,11 @@ pragma solidity ^0.8.13;
 //pragma solidity >= 0.8;
 
 import "prb-math/PRBMathSD59x18.sol";
-import "src/AMM/ACC/IBasePS.sol";
-import "src/AMM/ACC/IACC.sol";
+import "src/AMM/ACon2/IBasePS.sol";
+import "src/AMM/ACon2/IACon2.sol";
 
 
-contract ACC is IACC {
+contract ACon2 is IACon2 {
     using PRBMathSD59x18 for int256;
 
     uint public beta;

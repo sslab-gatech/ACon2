@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 //pragma solidity >= 0.8;
 
 import "prb-math/PRBMathSD59x18.sol";
-import "src/AMM/ACC/IBasePS.sol";
+import "src/AMM/ACon2/IBasePS.sol";
 
 contract KF1D is ISeqScoreFunc {
     using PRBMathSD59x18 for int256;

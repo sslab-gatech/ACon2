@@ -7,6 +7,7 @@ import time
 import json
 import warnings
 import random
+import pickle
 
 import web3
 from web3 import Web3
@@ -173,6 +174,8 @@ class Trader:
         
     def run(self):
         gas_used_history = []
+        gas_data_fn = os.path.join(self.args.output_dir, self.args.exp_name, 'gas_data.pk')
+
         while True:
             
             try:
@@ -196,6 +199,10 @@ class Trader:
 
                 if gas_used is not None and len(gas_used_history) <= 600:
                     gas_used_history.append(gas_used)
+
+                if len(gas_used_history) == 500:
+                    pickle.dump(gas_used_history, open(gas_data_fn, 'wb'))
+
 
                 # get current balance
                 print(f'[trader] ETH balance = {self.w3.fromWei(self.check_ETH_balance(), "ether"): .4f} ether, '

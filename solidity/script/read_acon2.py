@@ -14,7 +14,7 @@ from web3 import Web3
 from logger import *
 from util import *
 
-class ACCReader:
+class ACon2Reader:
     def __init__(self, args):
         self.args = args
 
@@ -28,62 +28,41 @@ class ACCReader:
         self.DAI_addr = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
         self.WETH_addr = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 
-        # init ACC
-        acc_addr = json.loads(open(os.path.join(self.args.output_dir, f'acc.json')).read())['deployedTo']
-        self.acc = self.w3.eth.contract(acc_addr, abi=open('out/ACC.sol/ACC.abi.json').read())
+        # init ACon2
+        acon2_addr = json.loads(open(os.path.join(self.args.output_dir, f'acon2.json')).read())['deployedTo']
+        self.acon2 = self.w3.eth.contract(acon2_addr, abi=open('out/ACon2.sol/ACon2.abi.json').read())
 
         
     def run(self):
         data = []
         data_fn = os.path.join(self.args.output_dir, self.args.exp_name, 'data.pk')
+        gas_data_fn = os.path.join(self.args.output_dir, self.args.exp_name, 'gas_data.pk')
+
         os.makedirs(os.path.dirname(data_fn), exist_ok=True)
-        n_err = 0
         n_err_cons = 0
         n_obs = 0
         gas_used_history = []
         
         while True:
             block_id = self.w3.eth.get_block_number()
-            beta = self.acc.functions.getBeta().call(block_identifier=block_id)
-            n_sources = self.acc.functions.getSources().call(block_identifier=block_id)
+            beta = self.acon2.functions.getBeta().call(block_identifier=block_id)
+            n_sources = self.acon2.functions.getSources().call(block_identifier=block_id)
 
-            gas_used_history.append(self.acc.functions.eval().estimate_gas())
-            lower_interval, upper_interval, lower_intervals, upper_intervals, observations = self.acc.functions.eval().call(block_identifier=block_id)
+            gas_used_history.append(self.acon2.functions.eval().estimate_gas())
+            lower_interval, upper_interval, lower_intervals, upper_intervals, observations = self.acon2.functions.eval().call(block_identifier=block_id)
             lower_interval = lower_interval / 10**18
             upper_interval = upper_interval / 10**18
             base_intervals = [[l / 10**18, u / 10**18] for l, u in zip(lower_intervals, upper_intervals)]
-
-            
-            # while True:
-            #     if self.w3.eth.get_block_number() >= block_id+1:
-            #         break
-            #     else:
-            #         time.sleep(0.001)
-            # name_prices = {
-            #     name: check_WETH_DAI_pair(self.w3.eth, market, self.WETH_addr, self.DAI_addr, block_id=block_id)
-            #     for name, market in self.market_contracts.items()}
-            # prices = [v for v in name_prices.values()]
-            # prices_str = ",".join([f'{v:.4f}' for v in prices])
-            # pseudo_label = np.median(prices)
             
             prices = [float(v / 10**18) for v in observations]
             prices_str = ",".join([f'{v:.4f}' for v in prices])
             pseudo_label = np.median(prices)
-            # # choose the mean of the second two
-            # pseudo_label = np.mean(prices[1:])
-
             
             # compute errors
             n_obs += 1
             if not(pseudo_label >= lower_interval and pseudo_label <= upper_interval):
                 n_err_cons += 1
 
-            cover = [1 if l <= pseudo_label and pseudo_label <= u else 0 for l, u in base_intervals]
-            # print(pseudo_label, base_intervals)
-            # print(cover)
-            if np.sum(cover) < n_sources - beta:
-                n_err += 1
-            
             data.append({
                 'prices': prices,
                 'market_names': [k for k in self.market_contracts.keys()],
@@ -91,12 +70,15 @@ class ACCReader:
                 'n_sources': n_sources,
                 'interval': [lower_interval, upper_interval],
                 'miscoverage_cons': n_err_cons / n_obs,
-                'miscoverage': n_err / n_obs,
             })
 
-            print(f'[ACC] beta = {beta}, n_sources = {n_sources}, price = {prices_str}, pseudo-label= {pseudo_label:.4f}, '
+            # save gas history
+            if len(gas_used_history) == 500:
+                pickle.dump(gas_used_history, open(gas_data_fn, 'wb'))
+
+            print(f'[ACon2] beta = {beta}, n_sources = {n_sources}, price = {prices_str}, pseudo-label= {pseudo_label:.4f}, '
                   f'price interval = ({lower_interval:.4f}, {upper_interval:.4f}), length = {upper_interval - lower_interval:.4f}, '
-                  f'error_cons = {n_err_cons / n_obs:.4f}, error = {n_err / n_obs:.4f}, '
+                  f'error_cons = {n_err_cons / n_obs:.4f}, '
                   f'gas used (for {len(gas_used_history)} TXs) = {np.mean(gas_used_history):.2f} +- {np.std(gas_used_history):.2f}'
             )
             pickle.dump(data, open(data_fn, 'wb'))
@@ -118,5 +100,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
-    reader = ACCReader(args)
+    reader = ACon2Reader(args)
     reader.run()
