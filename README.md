@@ -53,17 +53,17 @@ execute `./docker_scripts/docker_plot_USD_ETH_precomp.sh` if you wish to use pre
   * For Figure 5(c), see `output_docker/three_sources_USD_ETH_UniswapV2_coinbase_binance_K_3_beta_1/figs/plot_miscoverage.pdf`
   * For Figure 6(a), see `output_docker/one_source_USD_ETH_UniswapV2_K_1_beta_0_two_sources_USD_ETH_UniswapV2_coinbase_K_2_beta_1_three_sources_USD_ETH_UniswapV2_coinbase_binance_K_3_beta_1/figs/plot_size.pdf`
   * For Figure 9(a), see `output_docker/three_sources_OneSigma_USD_ETH_UniswapV2_coinbase_binance_K_3_beta_1/figs/plot_ps.pdf`
-  * For Figure 9(b), see `output_docker/three_sources_OneSigma_USD_ETH_UniswapV2_coinbase_binance_K_3_beta_1/figs/plot__miscoverage.pdf`
+  * For Figure 9(b), see `output_docker/three_sources_OneSigma_USD_ETH_UniswapV2_coinbase_binance_K_3_beta_1/figs/plot_miscoverage.pdf`
 
 * To reproduce Table 1, Figure 7, Figure 8, and Figure 6(b), execute `./docker_scripts/docker_plot_INV_ETH.sh` or execute `./docker_scripts/docker_plot_INV_ETH_precomp.sh` if you wish to use precomputed results for reproducing results.
    * For Table 1, see `stdout`
-   * For Table 7(a), see `output_docker/one_source_INV_ETH_SushiSwap_K_1_beta_0/figs/plot_ps.pdf`
-   * For Table 7(b), see `output_docker/two_sources_INV_ETH_SushiSwap_UniswapV2_K_2_beta_1/figs/plot_ps.pdf`
-   * For Table 7(c), see `output_docker/three_sources_INV_ETH_SushiSwap_UniswapV2_coinbase_K_3_beta_1/figs/plot_ps.pdf`
-   * For Table 8(a), see `output_docker/one_source_INV_ETH_SushiSwap_K_1_beta_0/figs/plot_miscoverage.pdf`
-   * For Table 8(b), see `output_docker/two_sources_INV_ETH_SushiSwap_UniswapV2_K_2_beta_1/figs/plot_miscoverage.pdf`
-   * For Table 8(c), see `output_docker/three_sources_INV_ETH_SushiSwap_UniswapV2_coinbase_K_3_beta_1/figs/plot_miscoverage.pdf`
-   * For Table 6(a), see `output_docker/one_source_INV_ETH_SushiSwap_K_1_beta_0_two_sources_INV_ETH_SushiSwap_UniswapV2_K_2_beta_1_three_sources_INV_ETH_SushiSwap_UniswapV2_coinbase_K_3_beta_1/figs/plot_size.pdf`
+   * For Figure 7(a), see `output_docker/one_source_INV_ETH_SushiSwap_K_1_beta_0/figs/plot_ps.pdf`
+   * For Figure 7(b), see `output_docker/two_sources_INV_ETH_SushiSwap_UniswapV2_K_2_beta_1/figs/plot_ps.pdf`
+   * For Figure 7(c), see `output_docker/three_sources_INV_ETH_SushiSwap_UniswapV2_coinbase_K_3_beta_1/figs/plot_ps.pdf`
+   * For Figure 8(a), see `output_docker/one_source_INV_ETH_SushiSwap_K_1_beta_0/figs/plot_miscoverage.pdf`
+   * For Figure 8(b), see `output_docker/two_sources_INV_ETH_SushiSwap_UniswapV2_K_2_beta_1/figs/plot_miscoverage.pdf`
+   * For Figure 8(c), see `output_docker/three_sources_INV_ETH_SushiSwap_UniswapV2_coinbase_K_3_beta_1/figs/plot_miscoverage.pdf`
+   * For Figure 6(b), see `output_docker/one_source_INV_ETH_SushiSwap_K_1_beta_0_two_sources_INV_ETH_SushiSwap_UniswapV2_K_2_beta_1_three_sources_INV_ETH_SushiSwap_UniswapV2_coinbase_K_3_beta_1/figs/plot_size.pdf`
 
 
 ## Solidity Implementation
