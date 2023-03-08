@@ -30,6 +30,7 @@ For Solidity implementation, we also follow three steps.
 ### Installation (5 human-minutes + 5 compute-minutes)
 * Install [Docker](https://www.docker.com/)
 * Pull a docker image via `docker pull ghcr.io/sslab-gatech/acon2:latest`
+* Clone this repository
 * Execute `cd python`
 
 ### (Optional) Run Experiments (0 human-minutes + 32 compute-hours)
@@ -71,6 +72,7 @@ execute `./docker_scripts/docker_plot_USD_ETH_precomp.sh` if you wish to use pre
 
 * Install [Docker](https://www.docker.com/)
 * Pull a docker image via `docker pull ghcr.io/sslab-gatech/acon2-sol:latest`
+* Clone this repository
 * Execute `cd solidity`
 
 
