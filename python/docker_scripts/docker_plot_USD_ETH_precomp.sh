@@ -1,6 +1,7 @@
 OUTPUTDIR=${PWD}/output_docker
+IMGTAG=ghcr.io/sslab-gatech/acon2:latest
 mkdir -p $OUTPUTDIR
-DOCKERCMD="docker run -v ${OUTPUTDIR}:/app/output --rm acon2:v1"
+DOCKERCMD="docker run -v ${OUTPUTDIR}:/app/output --rm $IMGTAG"
 ALGOUTPUTDIR=output_CR
 
 # consensus sets visualization

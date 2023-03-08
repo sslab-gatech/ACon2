@@ -18,6 +18,7 @@ if __name__ == '__main__':
     ## init a parser
     parser = argparse.ArgumentParser(description='data plot')
     parser.add_argument('--output_dir', type=str, default='output')
+    parser.add_argument('--alg_output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, default='acon2')
     parser.add_argument('--fig_root', type=str, default='output/figs')
     # parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     error = []
     t_list = []
     
-    data_path_list = glob.glob(os.path.join(args.output_dir, f'{args.exp_name}_K_{args.K}_alpha_{args.alpha.replace(".", "d")}_iter_{args.exp_index}_duration_{args.duration}', 'data.pk'))
+    data_path_list = glob.glob(os.path.join(args.alg_output_dir, f'{args.exp_name}_K_{args.K}_alpha_{args.alpha.replace(".", "d")}_iter_{args.exp_index}_duration_{args.duration}', 'data.pk'))
     print(data_path_list)
     for p in data_path_list:
         data = pickle.load(open(p, 'rb'))

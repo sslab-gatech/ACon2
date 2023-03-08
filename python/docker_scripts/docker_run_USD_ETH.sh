@@ -1,7 +1,8 @@
 OUTPUTDIR=${PWD}/output_docker
+IMGTAG=ghcr.io/sslab-gatech/acon2:latest
 mkdir -p $OUTPUTDIR
 echo "output directory: $OUTPUTDIR"
-DOCKERCMD="docker run -v ${OUTPUTDIR}:/app/output --rm acon2:v1"
+DOCKERCMD="docker run -v ${OUTPUTDIR}:/app/output --rm $IMGTAG"
 NOISE=4.6 # exp(4.6) \approx 100
 NCP=0
 

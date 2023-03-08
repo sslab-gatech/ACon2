@@ -33,8 +33,9 @@ COPY plots/ ./plots
 COPY foundry.toml ./foundry.toml
 COPY remappings.txt ./remappings.txt
 COPY script/ ./script
-COPY src/ ./src
-COPY test/ ./test
+COPY src_baseline/ ./src_baseline
+COPY src_acon2/ ./src_acon2
+#COPY out/ ./out
 COPY output_CR/ ./output_CR
-RUN mkdir -p ./output
+#RUN rm -r ./output && mkdir -p ./output
 

@@ -16,6 +16,7 @@ if __name__ == '__main__':
     ## init a parser
     parser = argparse.ArgumentParser(description='data plot')
     parser.add_argument('--output_dir', type=str, default='output')
+    parser.add_argument('--alg_output_dir', type=str, default='output')
     parser.add_argument('--exp_name', type=str, default='read_acc')
     parser.add_argument('--fig_root', type=str, default='output/figs/acon2')
     parser.add_argument('--style', type=str, nargs='+', default=['-k', '-r', '-b'])
@@ -37,7 +38,7 @@ if __name__ == '__main__':
     os.makedirs(os.path.dirname(fn_out), exist_ok=True)
 
     # read data
-    data_path = os.path.join(args.output_dir, args.exp_name, 'data.pk')
+    data_path = os.path.join(args.alg_output_dir, args.exp_name, 'data.pk')
     data = pickle.load(open(data_path, 'rb'))
     t = np.arange(len(data))
     data = data[args.data_start_idx:args.data_end_idx]

@@ -1,7 +1,8 @@
 OUTPUTDIR=${PWD}/output_docker
+IMGTAG=ghcr.io/sslab-gatech/acon2:latest
 mkdir -p $OUTPUTDIR
 echo "output directory: $OUTPUTDIR"
-DOCKERCMD="docker run -v ${OUTPUTDIR}:/app/output --rm acon2:v1"
+DOCKERCMD="docker run -v ${OUTPUTDIR}:/app/output --rm $IMGTAG"
 NOISE=0.1 # exp(0.1) \approx 1, which makes a consensus set size around 0.5 on initial data
 NCP=0.2735 # max(prices) - min(prices) at time t=1
 

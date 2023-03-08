@@ -1,1 +1,3 @@
-docker run -it --entrypoint bash acon2:v1
+IMGTAG=ghcr.io/sslab-gatech/acon2:latest
+docker run -it --entrypoint bash $IMGTAG
+

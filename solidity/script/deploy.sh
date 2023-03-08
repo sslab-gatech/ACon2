@@ -5,6 +5,9 @@ ALPHA=$2
 EXPNAME=$3
 AMMNAMES=""
 
+ln -sf src_acon2 src
+forge build --force --extra-output-files abi
+
 for ((i=1; i<=$K; i++));
 do
     AMMNAME="AMM${i}"

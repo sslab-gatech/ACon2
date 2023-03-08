@@ -26,37 +26,8 @@ class LP:
         self.market_contracts = get_market_contracts(self.w3.eth, [args.market_name], self.args.output_dir)
         self.market = self.market_contracts[args.market_name]
 
-        # #TODO: assume that UniswapV2-style AMMs are used
-        # if args.market_name == 'UniswapV2':
-        #     router02_addr = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
-        #     factory_addr = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'
-        #     self.router02 = self.w3.eth.contract(router02_addr, abi=open('script/abi_uniswap_v2_router02.json').read())
-        #     self.factory = self.w3.eth.contract(factory_addr, abi=open('script/abi_uniswap_v2_factory.json').read())
-
-        # elif args.market_name == 'SushiSwap':
-        #     router02_addr = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'
-        #     factory_addr = '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac'
-        #     self.router02 = self.w3.eth.contract(router02_addr, abi=open('script/abi_uniswap_v2_router02.json').read())
-        #     self.factory = self.w3.eth.contract(factory_addr, abi=open('script/abi_uniswap_v2_factory.json').read())
-            
-        # elif 'AMM' in args.market_name:
-        #     router02_addr = json.loads(open(os.path.join(self.args.output_dir, f'{args.market_name.lower()}_router.json')).read())['deployedTo']
-        #     factory_addr = json.loads(open(os.path.join(self.args.output_dir, f'{args.market_name.lower()}_factory.json')).read())['deployedTo']
-        #     self.router02 = self.w3.eth.contract(router02_addr, abi=open('out/IUniswapV2Router02.sol/IUniswapV2Router02.abi.json').read())
-        #     self.factory = self.w3.eth.contract(factory_addr, abi=open('out/IUniswapV2Factory.sol/IUniswapV2Factory.abi.json').read())
-
-        # else:
-        #     raise NotImplementedError
         
         print(f'[{self.args.market_name}] router address = {self.market["router"].address}, factory address = {self.market["factory"].address}')
-        
-        # #TODO: assume UniswapV2-style
-        # router02_addr = json.loads(open(os.path.join(self.args.output_dir, 'amm1_router.json')).read())['deployedTo']
-        # self.router02 = self.w3.eth.contract(router02_addr, abi=open('out/IUniswapV2Router02.sol/IUniswapV2Router02.abi.json').read())
-        # factory_addr = json.loads(open(os.path.join(self.args.output_dir, 'amm1_factory.json')).read())['deployedTo']
-        # self.factory = self.w3.eth.contract(factory_addr, abi=open('out/IUniswapV2Factory.sol/IUniswapV2Factory.abi.json').read())
-        # print(f'[{self.args.market_name}] router02 address = {router02_addr}, factory address = {factory_addr}')
-
         
         
         #TODO: only consider a DAI and ETH pair
@@ -84,7 +55,6 @@ class LP:
     def check_WETH_DAI_pair(self):
 
         pair_addr = self.market['factory'].functions.getPair(self.WETH_addr, self.DAI_addr).call()
-        #pair = self.w3.eth.contract(pair_addr, abi=open('out/IUniswapV2Pair.sol/IUniswapV2Pair.0.8.16.abi.json').read())
         pair = self.w3.eth.contract(pair_addr, abi=open('out/IUniswapV2Pair.sol/IUniswapV2Pair.abi.json').read())
 
         reserve0, reserve1, _ = pair.functions.getReserves().call()
@@ -100,29 +70,6 @@ class LP:
             
         return DAI_ETH_price
     
-        
-    # def buy_WETH(self, amount_in_wei):
-    #     swap_path = [self.WETH_addr, self.WETH_addr]
-
-    #     min_amount_out = int(self.uniswap_v2_router02.functions.getAmountsOut(amount_in_wei, swap_path).call()[1]*0.9)
-    #     deadline = int(time.time() + 60) # TODO
-    #     fun = self.uniswap_v2_router02.functions.swapExactETHForTokens(
-    #         min_amount_out,
-    #         swap_path,
-    #         self.address,
-    #         deadline
-    #     )
-        
-    #     tx = fun.buildTransaction({
-    #         'from': self.address,
-    #         'nonce': self.w3.eth.getTransactionCount(self.address),
-    #         'value': amount_in_wei,
-    #         'gas': 2000000, #TODO
-    #         'gasPrice': Web3.toWei('50', 'gwei'), #TODO
-    #     })
-    #     signed_tx = self.w3.eth.account.signTransaction(tx, self.args.private_key)
-    #     emitted = self.w3.eth.sendRawTransaction(signed_tx.rawTransaction)
-
         
     def swap_ETHforDAI_UniswapV2(self, amount_in_wei):
 
@@ -163,7 +110,6 @@ class LP:
     
 
         # parameters
-        ##TODO: use realistic values
         amountETHDesired = int(100*1e18)
         amountTokenDesired = int(100*1e18)
         amountTokenMin = int(amountTokenDesired*0.9)
