@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     fontsize = 15
     data_info = [
-        {'name': 'coinbase', 'path': 'data/price_ETH_USD/coinbase.pk', 'style': 'b-'},
+        #{'name': 'coinbase', 'path': 'data/price_ETH_USD/coinbase.pk', 'style': 'b-'},
         {'name': 'UniswapV2', 'path': 'data/price_ETH_USD/UniswapV2.pk', 'style': 'r-'},
     ]
     fn_out = 'output/figs/data/summary'
